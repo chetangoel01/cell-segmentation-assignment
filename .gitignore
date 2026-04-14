@@ -1,0 +1,22 @@
+data/
+
+# python
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+
+# macOS
+.DS_Store
+
+# large downloaded artifacts
+docs/*.zip
+docs/*.pdf
+
+# outputs
+submission.csv
+submission_code.zip
+
+# model artifacts (keep folder)
+models/*
+!models/.gitkeep
