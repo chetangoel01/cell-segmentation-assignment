@@ -17,6 +17,9 @@ docs/*.pdf
 submission.csv
 submission_code.zip
 
+# logs
+logs/
+
 # model artifacts (keep folder)
 models/*
 !models/.gitkeep

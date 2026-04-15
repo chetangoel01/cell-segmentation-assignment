@@ -1,8 +1,9 @@
-"""Fine-tune Cellpose on training FOVs and evaluate on validation FOVs."""
+"""Fine-tune Cellpose on training FOVs with checkpoint save/resume for HPC preemption."""
 from __future__ import annotations
 
+import json
 import os
-import sys
+import shutil
 
 import numpy as np
 import pandas as pd
@@ -13,12 +14,34 @@ from cellpose import models as cp_models, train as cp_train
 from src.io import load_fov_images
 from src.train_cellpose import boundaries_to_mask
 
-DATA_ROOT = "/scratch/pl2820/competition"
-PIXEL_SIZE = 0.109
+DATA_ROOT      = "/scratch/pl2820/competition"
+PIXEL_SIZE     = 0.109
 MODEL_SAVE_DIR = "models"
-MODEL_NAME = "cellpose_finetuned"
+MODEL_NAME     = "cellpose_finetuned"
+TOTAL_EPOCHS   = 100
+CHUNK_EPOCHS   = 20   # save a checkpoint every N epochs
 
 os.makedirs(MODEL_SAVE_DIR, exist_ok=True)
+os.makedirs("logs", exist_ok=True)
+
+# ── Checkpoint detection ────────────────────────────────────────────────────
+state_file = os.path.join(MODEL_SAVE_DIR, "train_state.json")
+completed_epochs = 0
+latest_ckpt = None
+
+if os.path.exists(state_file):
+    with open(state_file) as f:
+        state = json.load(f)
+    completed_epochs = state.get("completed_epochs", 0)
+    latest_ckpt = state.get("latest_checkpoint")
+    if latest_ckpt and not os.path.exists(latest_ckpt):
+        print(f"WARNING: checkpoint not found ({latest_ckpt}), restarting from scratch")
+        completed_epochs = 0
+        latest_ckpt = None
+    else:
+        print(f"Resuming from epoch {completed_epochs}/{TOTAL_EPOCHS}: {latest_ckpt}")
+else:
+    print("No checkpoint found, starting fresh")
 
 print("Loading metadata and ground truth...")
 meta = pd.read_csv(f"{DATA_ROOT}/fov_metadata.csv").set_index("fov")
@@ -49,30 +72,63 @@ for fov_name in train_fovs:
     except Exception as exc:
         print(f"  Skipping {fov_name}: {exc}")
 
-print(f"\nTraining on {len(train_images)} FOVs")
+print(f"\nTraining set: {len(train_images)} FOVs")
 
-# Fine-tune
-base_model = cp_models.CellposeModel(gpu=True, model_type="cyto2")
-model_path = cp_train.train_seg(
-    base_model.net,
-    train_data=train_images,
-    train_labels=train_masks,
-    channels=[1, 2],
-    save_path=MODEL_SAVE_DIR,
-    n_epochs=100,
-    learning_rate=0.005,
-    weight_decay=1e-5,
-    batch_size=8,
-    model_name=MODEL_NAME,
-)
-print(f"\nSaved fine-tuned model: {model_path}")
+# ── Chunked training with checkpoints ───────────────────────────────────────
+if completed_epochs >= TOTAL_EPOCHS:
+    print("Training already complete, skipping to validation.")
+    final_model_path = os.path.join(MODEL_SAVE_DIR, MODEL_NAME)
+else:
+    if latest_ckpt:
+        print(f"Loading checkpoint: {latest_ckpt}")
+        net = cp_models.CellposeModel(gpu=True, pretrained_model=latest_ckpt).net
+    else:
+        net = cp_models.CellposeModel(gpu=True, model_type="cyto2").net
 
-# Evaluate on validation FOVs (036-040)
-finetuned_model = cp_models.CellposeModel(gpu=True, pretrained_model=model_path)
-val_fovs = [f"FOV_{i:03d}" for i in range(36, 41)]
+    epoch = completed_epochs
+    last_ckpt_path = latest_ckpt
+
+    while epoch < TOTAL_EPOCHS:
+        chunk = min(CHUNK_EPOCHS, TOTAL_EPOCHS - epoch)
+        target_epoch = epoch + chunk
+        ckpt_name = f"{MODEL_NAME}_ep{target_epoch:03d}"
+        print(f"\nTraining epochs {epoch + 1}-{target_epoch} / {TOTAL_EPOCHS}  (checkpoint: {ckpt_name})")
+
+        last_ckpt_path = cp_train.train_seg(
+            net,
+            train_data=train_images,
+            train_labels=train_masks,
+            channels=[1, 2],
+            save_path=MODEL_SAVE_DIR,
+            n_epochs=chunk,
+            learning_rate=0.005,
+            weight_decay=1e-5,
+            batch_size=8,
+            model_name=ckpt_name,
+        )
+
+        epoch = target_epoch
+        with open(state_file, "w") as f:
+            json.dump({"completed_epochs": epoch, "latest_checkpoint": last_ckpt_path}, f)
+        print(f"  Checkpoint saved at epoch {epoch}: {last_ckpt_path}")
+
+        if epoch < TOTAL_EPOCHS:
+            net = cp_models.CellposeModel(gpu=True, pretrained_model=last_ckpt_path).net
+
+    # Copy final checkpoint to canonical name for infer.py to find
+    final_model_path = os.path.join(MODEL_SAVE_DIR, MODEL_NAME)
+    if last_ckpt_path and os.path.abspath(last_ckpt_path) != os.path.abspath(final_model_path):
+        shutil.copy(last_ckpt_path, final_model_path)
+    print(f"\nTraining complete. Final model: {final_model_path}")
+
+# ── Validation on held-out FOVs (036-040) ───────────────────────────────────
+print("\nValidating on held-out FOVs (036-040)...")
+finetuned_model = cp_models.CellposeModel(gpu=True, pretrained_model=final_model_path)
 spots_train = pd.read_csv(f"{DATA_ROOT}/train/ground_truth/spots_train.csv")
 
 ari_scores = {}
+val_fovs = [f"FOV_{i:03d}" for i in range(36, 41)]
+
 for fov_name in val_fovs:
     fov_dir = f"{DATA_ROOT}/train/{fov_name}"
     if not os.path.exists(fov_dir):
@@ -87,17 +143,19 @@ for fov_name in val_fovs:
     gt_mask = boundaries_to_mask(cells, fov_name, fov_x, fov_y)
 
     fov_spots = spots_train[spots_train["fov"] == fov_name].copy()
-    px = np.clip(((fov_spots["global_x"].values - fov_x) / PIXEL_SIZE).astype(int), 0, 2047)
-    py = np.clip(((fov_spots["global_y"].values - fov_y) / PIXEL_SIZE).astype(int), 0, 2047)
-    pred_ids = pred_masks[py, px]
-    gt_ids = gt_mask[py, px]
+    # Corrected MERFISH coordinate convention via pre-computed columns:
+    #   image_row = 2048 - (global_x - fov_x) / pixel_size  (x-axis flipped)
+    #   image_col = (global_y - fov_y) / pixel_size
+    rows = np.clip(fov_spots["image_row"].values.astype(int), 0, 2047)
+    cols = np.clip(fov_spots["image_col"].values.astype(int), 0, 2047)
+    pred_ids = pred_masks[rows, cols]
+    gt_ids   = gt_mask[rows, cols]
 
-    from sklearn.metrics import adjusted_rand_score
     ari = adjusted_rand_score(gt_ids, pred_ids)
     ari_scores[fov_name] = ari
-    print(f"{fov_name}: ARI = {ari:.4f}  ({pred_masks.max()} cells detected)")
+    print(f"  {fov_name}: ARI = {ari:.4f}  ({pred_masks.max()} cells)")
 
 mean_ari = float(np.mean(list(ari_scores.values()))) if ari_scores else 0.0
-print(f"\nMean validation ARI : {mean_ari:.4f}")
+print(f"\nMean validation ARI  : {mean_ari:.4f}")
 print(f"Baseline (pretrained): 0.632")
 print(f"Improvement          : {mean_ari - 0.632:+.4f}")
