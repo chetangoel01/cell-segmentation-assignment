@@ -1,9 +1,11 @@
 """Fine-tune Cellpose on training FOVs with checkpoint save/resume for HPC preemption."""
 from __future__ import annotations
 
+import argparse
 import json
 import os
 import shutil
+import signal
 
 import numpy as np
 import pandas as pd
@@ -14,15 +16,36 @@ from cellpose import models as cp_models, train as cp_train
 from src.io import load_fov_images
 from src.train_cellpose import boundaries_to_mask
 
+# ── Args ─────────────────────────────────────────────────────────────────────
+parser = argparse.ArgumentParser()
+parser.add_argument("--base-model", default="cyto2",
+                    choices=["cyto2", "cyto3", "nuclei"],
+                    help="Cellpose pretrained model to fine-tune from")
+parser.add_argument("--exp-name", default=None,
+                    help="Experiment name (defaults to base-model name)")
+args = parser.parse_args()
+
+EXP_NAME = args.exp_name or args.base_model
+
 DATA_ROOT      = "/scratch/pl2820/competition"
 PIXEL_SIZE     = 0.109
-MODEL_SAVE_DIR = "models"
-MODEL_NAME     = "cellpose_finetuned"
+MODEL_SAVE_DIR = f"models/{EXP_NAME}"
+MODEL_NAME     = f"cellpose_{EXP_NAME}"
 TOTAL_EPOCHS   = 100
 CHUNK_EPOCHS   = 20   # save a checkpoint every N epochs
 
 os.makedirs(MODEL_SAVE_DIR, exist_ok=True)
 os.makedirs("logs", exist_ok=True)
+
+# ── Signal handler (SIGUSR1 sent 120s before time limit via --signal) ────────
+_stop_after_chunk = False
+
+def _sigusr1_handler(signum, frame):
+    global _stop_after_chunk
+    print("SIGUSR1 received: will stop after current checkpoint", flush=True)
+    _stop_after_chunk = True
+
+signal.signal(signal.SIGUSR1, _sigusr1_handler)
 
 # ── Checkpoint detection ────────────────────────────────────────────────────
 state_file = os.path.join(MODEL_SAVE_DIR, "train_state.json")
@@ -83,7 +106,7 @@ else:
         print(f"Loading checkpoint: {latest_ckpt}")
         net = cp_models.CellposeModel(gpu=True, pretrained_model=latest_ckpt).net
     else:
-        net = cp_models.CellposeModel(gpu=True, model_type="cyto2").net
+        net = cp_models.CellposeModel(gpu=True, model_type=args.base_model).net
 
     epoch = completed_epochs
     last_ckpt_path = latest_ckpt
@@ -111,6 +134,10 @@ else:
         with open(state_file, "w") as f:
             json.dump({"completed_epochs": epoch, "latest_checkpoint": last_ckpt_path}, f)
         print(f"  Checkpoint saved at epoch {epoch}: {last_ckpt_path}")
+
+        if _stop_after_chunk:
+            print(f"Stopping at epoch {epoch} (SIGUSR1). Requeue will resume.", flush=True)
+            break
 
         if epoch < TOTAL_EPOCHS:
             net = cp_models.CellposeModel(gpu=True, pretrained_model=last_ckpt_path).net
