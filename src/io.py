@@ -31,11 +31,12 @@ def get_polyt_stack(raw: np.ndarray) -> np.ndarray:
 
 
 def _parse_fov_id(fov: str) -> str:
-    """Return zero-padded numeric FOV id (e.g. 'FOV_001' -> '001')."""
+    """Return the FOV suffix for file glob (e.g. 'FOV_001' -> '001', 'FOV_A' -> 'A')."""
     fov = fov.strip()
     if fov.upper().startswith("FOV_"):
         fov = fov.split("_", 1)[1]
-    return fov.zfill(3)
+    # Only zero-pad if purely numeric (training FOVs); leave alpha IDs (FOV_A) as-is
+    return fov.zfill(3) if fov.isdigit() else fov
 
 
 def _pick_epi_file(candidates: list[Path]) -> Path:
