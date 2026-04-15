@@ -21,7 +21,7 @@ EXP_NAME       = args.exp_name
 DATA_ROOT      = "/scratch/pl2820/competition"
 MODEL_SAVE_DIR = f"models/{EXP_NAME}"
 MODEL_NAME     = f"cellpose_{EXP_NAME}"
-TEST_FOVS      = ["FOV_041", "FOV_042", "FOV_043", "FOV_044"]
+TEST_FOVS      = ["FOV_A", "FOV_B", "FOV_C", "FOV_D"]
 
 os.makedirs("logs", exist_ok=True)
 
