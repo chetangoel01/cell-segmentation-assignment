@@ -131,7 +131,7 @@ else:
 
         epoch = target_epoch
         with open(state_file, "w") as f:
-            json.dump({"completed_epochs": epoch, "latest_checkpoint": last_ckpt_path}, f)
+            json.dump({"completed_epochs": epoch, "latest_checkpoint": str(last_ckpt_path)}, f)
         print(f"  Checkpoint saved at epoch {epoch}: {last_ckpt_path}")
 
         if _stop_after_chunk:
