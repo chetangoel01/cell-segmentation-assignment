@@ -123,14 +123,17 @@ else:
         print(f"\nTraining epochs {epoch + 1}-{target_epoch} / {TOTAL_EPOCHS}  (checkpoint: {ckpt_name})")
 
         # train_seg() in Cellpose v4 returns (model_path, train_losses, ...)
+        # learning_rate=5e-5 matches the v4 default (v3 used 0.005, which is 100x
+        # too aggressive for v4 and destroys pretrained weights within a few epochs).
         last_ckpt_path, *_ = cp_train.train_seg(
             net,
             train_data=train_images,
             train_labels=train_masks,
+            channel_axis=0,
             save_path=MODEL_SAVE_DIR,
             n_epochs=chunk,
-            learning_rate=0.005,
-            weight_decay=1e-5,
+            learning_rate=5e-5,
+            weight_decay=0.1,
             batch_size=8,
             model_name=ckpt_name,
         )
