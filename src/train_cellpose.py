@@ -20,11 +20,14 @@ def boundaries_to_mask(
 ) -> np.ndarray:
     """Convert GT cell boundary polygons for one FOV/z-plane to an integer mask.
 
+    Cells are identified spatially: any cell whose boundary centroid falls within
+    [fov_x, fov_x + image_size*pixel_size) x [fov_y, fov_y + image_size*pixel_size)
+    is included. The ``fov_name`` argument is retained for API compatibility.
+
     Args:
         cell_boundaries_df: cell_boundaries_train.csv loaded with index_col=0.
-            Index entries look like 'FOV_001_cell_1'. Columns 'boundaryX_z{z}' and
-            'boundaryY_z{z}' hold comma-separated µm coordinates.
-        fov_name: e.g. "FOV_001"
+            Columns 'boundaryX_z{z}' and 'boundaryY_z{z}' hold comma-separated µm coords.
+        fov_name: FOV name (unused; kept for backward compatibility with call sites).
         fov_x, fov_y: FOV origin in µm (from fov_metadata.csv)
         pixel_size: µm per pixel (default 0.109)
         image_size: pixel dimension of the square image (default 2048)
@@ -32,15 +35,33 @@ def boundaries_to_mask(
     Returns:
         (image_size, image_size) int32 array. 0 = background, 1..N = cell integer IDs.
     """
-    fov_cells = cell_boundaries_df[cell_boundaries_df.index.str.startswith(fov_name)]
+    fov_x_max = fov_x + image_size * pixel_size
+    fov_y_max = fov_y + image_size * pixel_size
     mask = np.zeros((image_size, image_size), dtype=np.int32)
     cell_int = 1
 
-    for _cell_id, row in fov_cells.iterrows():
+    for _cell_id, row in cell_boundaries_df.iterrows():
         xs_str = row.get(f"boundaryX_z{z_plane}", "")
         ys_str = row.get(f"boundaryY_z{z_plane}", "")
         xs_str = str(xs_str) if pd.notna(xs_str) else ""
         ys_str = str(ys_str) if pd.notna(ys_str) else ""
+        if not xs_str or not ys_str:
+            continue
+
+        # Spatial pre-filter: cheap centroid check before building Shapely polygon.
+        # Cell IDs in the CSV are not FOV-prefixed, so we use spatial filtering.
+        try:
+            _xs = [float(v) for v in xs_str.split(",") if v.strip()]
+            _ys = [float(v) for v in ys_str.split(",") if v.strip()]
+        except ValueError:
+            continue
+        if not _xs or not _ys:
+            continue
+        cx = sum(_xs) / len(_xs)
+        cy = sum(_ys) / len(_ys)
+        if not (fov_x <= cx < fov_x_max and fov_y <= cy < fov_y_max):
+            continue
+
         poly = parse_boundary_polygon(xs_str, ys_str)
         if poly is None:
             continue
