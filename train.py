@@ -122,7 +122,8 @@ else:
         ckpt_name = f"{MODEL_NAME}_ep{target_epoch:03d}"
         print(f"\nTraining epochs {epoch + 1}-{target_epoch} / {TOTAL_EPOCHS}  (checkpoint: {ckpt_name})")
 
-        last_ckpt_path = cp_train.train_seg(
+        # train_seg() in Cellpose v4 returns (model_path, train_losses, ...)
+        last_ckpt_path, *_ = cp_train.train_seg(
             net,
             train_data=train_images,
             train_labels=train_masks,
@@ -133,6 +134,7 @@ else:
             batch_size=8,
             model_name=ckpt_name,
         )
+        last_ckpt_path = str(last_ckpt_path)
 
         epoch = target_epoch
         with open(state_file, "w") as f:
