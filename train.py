@@ -14,7 +14,7 @@ from sklearn.metrics import adjusted_rand_score
 from cellpose import models as cp_models, train as cp_train
 
 from src.io import load_fov_images
-from src.train_cellpose import boundaries_to_mask
+from src.train_cellpose import boundaries_to_mask, compute_spot_density
 
 # ── Args ─────────────────────────────────────────────────────────────────────
 parser = argparse.ArgumentParser()
@@ -27,12 +27,12 @@ args = parser.parse_args()
 
 EXP_NAME = args.exp_name or args.base_model
 
-DATA_ROOT      = "/scratch/pl2820/competition"
+DATA_ROOT      = "/scratch/cg4652/competition"
 PIXEL_SIZE     = 0.109
 MODEL_SAVE_DIR = f"models/{EXP_NAME}"
 MODEL_NAME     = f"cellpose_{EXP_NAME}"
-TOTAL_EPOCHS   = 100
-CHUNK_EPOCHS   = 20   # save a checkpoint every N epochs
+TOTAL_EPOCHS   = 300
+CHUNK_EPOCHS   = 5    # save a checkpoint every N epochs
 
 os.makedirs(MODEL_SAVE_DIR, exist_ok=True)
 os.makedirs("logs", exist_ok=True)
@@ -76,6 +76,7 @@ meta = pd.read_csv(f"{DATA_ROOT}/reference/fov_metadata.csv").set_index("fov")
 cells = pd.read_csv(
     f"{DATA_ROOT}/train/ground_truth/cell_boundaries_train.csv", index_col=0
 )
+spots_train = pd.read_csv(f"{DATA_ROOT}/train/ground_truth/spots_train.csv")
 
 # Build training set (FOVs 001-035)
 train_images, train_masks = [], []
@@ -94,7 +95,11 @@ for fov_name in train_fovs:
         if m.max() == 0:
             print(f"  No cells in mask: {fov_name}")
             continue
-        train_images.append(np.stack([polyt[2], dapi[2]], axis=0))
+        fov_spots = spots_train[spots_train["fov"] == fov_name]
+        spot_density = compute_spot_density(fov_spots)
+        dapi_max = np.max(dapi, axis=0)   # max projection across 5 z-planes
+        polyt_max = np.max(polyt, axis=0)
+        train_images.append(np.stack([polyt_max, dapi_max, spot_density], axis=0))
         train_masks.append(m)
         print(f"  Loaded {fov_name}: {m.max()} cells")
     except Exception as exc:
@@ -125,24 +130,25 @@ else:
         # train_seg() in Cellpose v4 returns (model_path, train_losses, ...)
         # learning_rate=5e-5 matches the v4 default (v3 used 0.005, which is 100x
         # too aggressive for v4 and destroys pretrained weights within a few epochs).
-        last_ckpt_path, *_ = cp_train.train_seg(
+        last_ckpt_path, train_losses, *_ = cp_train.train_seg(
             net,
             train_data=train_images,
             train_labels=train_masks,
             channel_axis=0,
             save_path=MODEL_SAVE_DIR,
             n_epochs=chunk,
-            learning_rate=5e-5,
+            learning_rate=1e-5,
             weight_decay=0.1,
             batch_size=8,
             model_name=ckpt_name,
         )
         last_ckpt_path = str(last_ckpt_path)
+        avg_loss = float(np.mean(train_losses)) if len(train_losses) else float("nan")
 
         epoch = target_epoch
         with open(state_file, "w") as f:
             json.dump({"completed_epochs": epoch, "latest_checkpoint": str(last_ckpt_path)}, f)
-        print(f"  Checkpoint saved at epoch {epoch}: {last_ckpt_path}")
+        print(f"  Checkpoint saved at epoch {epoch}: {last_ckpt_path}  (avg loss: {avg_loss:.4f})", flush=True)
 
         if _stop_after_chunk:
             print(f"Stopping at epoch {epoch} (SIGUSR1). Requeue will resume.", flush=True)
@@ -160,7 +166,6 @@ else:
 # ── Validation on held-out FOVs (036-040) ───────────────────────────────────
 print("\nValidating on held-out FOVs (036-040)...")
 finetuned_model = cp_models.CellposeModel(gpu=True, pretrained_model=final_model_path)
-spots_train = pd.read_csv(f"{DATA_ROOT}/train/ground_truth/spots_train.csv")
 
 ari_scores = {}
 val_fovs = [f"FOV_{i:03d}" for i in range(36, 41)]
@@ -174,8 +179,15 @@ for fov_name in val_fovs:
     dapi, polyt = load_fov_images(fov_dir)
     fov_x = meta.loc[fov_name, "fov_x"]
     fov_y = meta.loc[fov_name, "fov_y"]
+    fov_spots = spots_train[spots_train["fov"] == fov_name]
+    spot_density = compute_spot_density(fov_spots)
+    dapi_max = np.max(dapi, axis=0)
+    polyt_max = np.max(polyt, axis=0)
 
-    pred_masks, _, _ = finetuned_model.eval(np.stack([polyt[2], dapi[2]], axis=0), diameter=30)
+    pred_masks, _, _ = finetuned_model.eval(
+        np.stack([polyt_max, dapi_max, spot_density], axis=0),
+        diameter=0, cellprob_threshold=-1.0, channel_axis=0,
+    )
     gt_mask = boundaries_to_mask(cells, fov_name, fov_x, fov_y)
 
     fov_spots = spots_train[spots_train["fov"] == fov_name].copy()

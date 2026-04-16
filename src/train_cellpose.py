@@ -2,11 +2,32 @@ from __future__ import annotations
 
 import numpy as np
 import pandas as pd
+from scipy.ndimage import gaussian_filter
 from skimage import measure
 from skimage.draw import polygon as draw_polygon
 from shapely.geometry import Polygon as ShapelyPolygon
 
 from src.coords import parse_boundary_polygon
+
+
+def compute_spot_density(
+    spots_df: pd.DataFrame,
+    image_size: int = 2048,
+    sigma: float = 8.0,
+) -> np.ndarray:
+    """Build a smoothed mRNA spot density map as a uint16 image.
+
+    High density = many mRNA molecules nearby = likely inside a cell.
+    sigma=8px ≈ 0.87µm, chosen to roughly match nucleus radius.
+    """
+    density = np.zeros((image_size, image_size), dtype=np.float32)
+    rows = spots_df["image_row"].values.astype(int).clip(0, image_size - 1)
+    cols = spots_df["image_col"].values.astype(int).clip(0, image_size - 1)
+    np.add.at(density, (rows, cols), 1)
+    density = gaussian_filter(density, sigma=sigma)
+    if density.max() > 0:
+        density = (density / density.max() * 65535).astype(np.uint16)
+    return density
 
 
 def boundaries_to_mask(
@@ -66,10 +87,13 @@ def boundaries_to_mask(
         if poly is None:
             continue
         xs_um, ys_um = poly.exterior.xy
-        col_px = np.clip(
-            np.array([(x - fov_x) / pixel_size for x in xs_um]), 0, image_size - 1
-        )
+        # MERFISH convention: x-axis is flipped in image space
+        # image_row = (image_size - 1) - (x - fov_x) / pixel_size
+        # image_col = (y - fov_y) / pixel_size
         row_px = np.clip(
+            np.array([image_size - 1 - (x - fov_x) / pixel_size for x in xs_um]), 0, image_size - 1
+        )
+        col_px = np.clip(
             np.array([(y - fov_y) / pixel_size for y in ys_um]), 0, image_size - 1
         )
         rr, cc = draw_polygon(row_px, col_px, shape=(image_size, image_size))
