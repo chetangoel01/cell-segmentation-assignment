@@ -121,7 +121,6 @@ else:
             net,
             train_data=train_images,
             train_labels=train_masks,
-            channels=[1, 2],
             save_path=MODEL_SAVE_DIR,
             n_epochs=chunk,
             learning_rate=0.005,
@@ -166,7 +165,7 @@ for fov_name in val_fovs:
     fov_x = meta.loc[fov_name, "fov_x"]
     fov_y = meta.loc[fov_name, "fov_y"]
 
-    pred_masks, _, _ = finetuned_model.eval(dapi[2], diameter=30, channels=[1, 2])
+    pred_masks, _, _ = finetuned_model.eval(np.stack([polyt[2], dapi[2]], axis=0), diameter=30)
     gt_mask = boundaries_to_mask(cells, fov_name, fov_x, fov_y)
 
     fov_spots = spots_train[spots_train["fov"] == fov_name].copy()

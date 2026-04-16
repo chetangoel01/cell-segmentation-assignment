@@ -60,7 +60,10 @@ for fov_name in TEST_FOVS:
         continue
 
     dapi, polyt = load_fov_images(fov_dir)
-    pred_masks, _, _ = seg_model.eval(dapi[2], diameter=30, channels=[1, 2])
+    # Pass 2-channel stack (polyt, dapi) matching training data format.
+    # channels arg omitted — Cellpose v4 infers channel count from input shape.
+    img2ch = np.stack([polyt[2], dapi[2]], axis=0)
+    pred_masks, _, _ = seg_model.eval(img2ch, diameter=30)
     print(f"{fov_name}: {pred_masks.max()} cells detected")
 
     fov_spots = test_spots[test_spots["fov"] == fov_name].copy()
