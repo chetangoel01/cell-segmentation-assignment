@@ -53,16 +53,21 @@ completed_epochs = 0
 latest_ckpt = None
 
 if os.path.exists(state_file):
-    with open(state_file) as f:
-        state = json.load(f)
-    completed_epochs = state.get("completed_epochs", 0)
-    latest_ckpt = state.get("latest_checkpoint")
-    if latest_ckpt and not os.path.exists(latest_ckpt):
-        print(f"WARNING: checkpoint not found ({latest_ckpt}), restarting from scratch")
+    try:
+        with open(state_file) as f:
+            state = json.load(f)
+        completed_epochs = state.get("completed_epochs", 0)
+        latest_ckpt = state.get("latest_checkpoint")
+        if latest_ckpt and not os.path.exists(latest_ckpt):
+            print(f"WARNING: checkpoint not found ({latest_ckpt}), restarting from scratch")
+            completed_epochs = 0
+            latest_ckpt = None
+        else:
+            print(f"Resuming from epoch {completed_epochs}/{TOTAL_EPOCHS}: {latest_ckpt}")
+    except (json.JSONDecodeError, KeyError):
+        print(f"WARNING: corrupt state file ({state_file}), restarting from scratch")
         completed_epochs = 0
         latest_ckpt = None
-    else:
-        print(f"Resuming from epoch {completed_epochs}/{TOTAL_EPOCHS}: {latest_ckpt}")
 else:
     print("No checkpoint found, starting fresh")
 
