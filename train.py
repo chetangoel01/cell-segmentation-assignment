@@ -67,7 +67,7 @@ else:
     print("No checkpoint found, starting fresh")
 
 print("Loading metadata and ground truth...")
-meta = pd.read_csv(f"{DATA_ROOT}/fov_metadata.csv").set_index("fov")
+meta = pd.read_csv(f"{DATA_ROOT}/reference/fov_metadata.csv").set_index("fov")
 cells = pd.read_csv(
     f"{DATA_ROOT}/train/ground_truth/cell_boundaries_train.csv", index_col=0
 )
