@@ -1,0 +1,399 @@
+{
+  "best": {
+    "cellprob_threshold": -0.5,
+    "flow_threshold": 0.6,
+    "mean_ari": 0.8343505781015257
+  },
+  "grid": [
+    {
+      "cellprob_threshold": -0.5,
+      "flow_threshold": 0.6,
+      "mean_ari": 0.8343505781015257,
+      "per_fov": {
+        "FOV_036": 0.8536,
+        "FOV_037": 0.8566,
+        "FOV_038": 0.77,
+        "FOV_039": 0.8054,
+        "FOV_040": 0.8861
+      },
+      "mean_cells": 99.6
+    },
+    {
+      "cellprob_threshold": -0.5,
+      "flow_threshold": 0.8,
+      "mean_ari": 0.8340053686434885,
+      "per_fov": {
+        "FOV_036": 0.8536,
+        "FOV_037": 0.8566,
+        "FOV_038": 0.77,
+        "FOV_039": 0.8037,
+        "FOV_040": 0.8861
+      },
+      "mean_cells": 100.0
+    },
+    {
+      "cellprob_threshold": -0.5,
+      "flow_threshold": 0.4,
+      "mean_ari": 0.8317964069590976,
+      "per_fov": {
+        "FOV_036": 0.8401,
+        "FOV_037": 0.8566,
+        "FOV_038": 0.7709,
+        "FOV_039": 0.8041,
+        "FOV_040": 0.8872
+      },
+      "mean_cells": 97.6
+    },
+    {
+      "cellprob_threshold": -1.0,
+      "flow_threshold": 0.4,
+      "mean_ari": 0.8298631266054682,
+      "per_fov": {
+        "FOV_036": 0.8491,
+        "FOV_037": 0.8497,
+        "FOV_038": 0.7608,
+        "FOV_039": 0.8079,
+        "FOV_040": 0.8818
+      },
+      "mean_cells": 98.4
+    },
+    {
+      "cellprob_threshold": 0.0,
+      "flow_threshold": 0.8,
+      "mean_ari": 0.8247395983777167,
+      "per_fov": {
+        "FOV_036": 0.8255,
+        "FOV_037": 0.8525,
+        "FOV_038": 0.7789,
+        "FOV_039": 0.7852,
+        "FOV_040": 0.8816
+      },
+      "mean_cells": 96.4
+    },
+    {
+      "cellprob_threshold": -1.0,
+      "flow_threshold": 0.6,
+      "mean_ari": 0.824631613699899,
+      "per_fov": {
+        "FOV_036": 0.8496,
+        "FOV_037": 0.8526,
+        "FOV_038": 0.7542,
+        "FOV_039": 0.7893,
+        "FOV_040": 0.8774
+      },
+      "mean_cells": 103.8
+    },
+    {
+      "cellprob_threshold": -1.0,
+      "flow_threshold": 0.8,
+      "mean_ari": 0.8245899634606655,
+      "per_fov": {
+        "FOV_036": 0.8489,
+        "FOV_037": 0.8526,
+        "FOV_038": 0.7539,
+        "FOV_039": 0.7905,
+        "FOV_040": 0.8771
+      },
+      "mean_cells": 105.6
+    },
+    {
+      "cellprob_threshold": 0.0,
+      "flow_threshold": 0.6,
+      "mean_ari": 0.8238080391775473,
+      "per_fov": {
+        "FOV_036": 0.8229,
+        "FOV_037": 0.8525,
+        "FOV_038": 0.7789,
+        "FOV_039": 0.7841,
+        "FOV_040": 0.8807
+      },
+      "mean_cells": 95.8
+    },
+    {
+      "cellprob_threshold": 0.0,
+      "flow_threshold": 0.4,
+      "mean_ari": 0.8213073518889272,
+      "per_fov": {
+        "FOV_036": 0.822,
+        "FOV_037": 0.8525,
+        "FOV_038": 0.7772,
+        "FOV_039": 0.7741,
+        "FOV_040": 0.8807
+      },
+      "mean_cells": 94.0
+    },
+    {
+      "cellprob_threshold": -0.5,
+      "flow_threshold": 0.2,
+      "mean_ari": 0.8203737042942342,
+      "per_fov": {
+        "FOV_036": 0.8299,
+        "FOV_037": 0.8578,
+        "FOV_038": 0.7817,
+        "FOV_039": 0.757,
+        "FOV_040": 0.8755
+      },
+      "mean_cells": 88.6
+    },
+    {
+      "cellprob_threshold": -1.5,
+      "flow_threshold": 0.4,
+      "mean_ari": 0.8192835234000668,
+      "per_fov": {
+        "FOV_036": 0.8396,
+        "FOV_037": 0.8359,
+        "FOV_038": 0.7516,
+        "FOV_039": 0.7958,
+        "FOV_040": 0.8735
+      },
+      "mean_cells": 97.6
+    },
+    {
+      "cellprob_threshold": 0.0,
+      "flow_threshold": 0.2,
+      "mean_ari": 0.8148721982329533,
+      "per_fov": {
+        "FOV_036": 0.829,
+        "FOV_037": 0.8411,
+        "FOV_038": 0.7817,
+        "FOV_039": 0.7512,
+        "FOV_040": 0.8714
+      },
+      "mean_cells": 88.4
+    },
+    {
+      "cellprob_threshold": -1.0,
+      "flow_threshold": 0.2,
+      "mean_ari": 0.8138540510016682,
+      "per_fov": {
+        "FOV_036": 0.8268,
+        "FOV_037": 0.837,
+        "FOV_038": 0.7747,
+        "FOV_039": 0.7581,
+        "FOV_040": 0.8727
+      },
+      "mean_cells": 86.8
+    },
+    {
+      "cellprob_threshold": -1.5,
+      "flow_threshold": 0.2,
+      "mean_ari": 0.8135660713895593,
+      "per_fov": {
+        "FOV_036": 0.8448,
+        "FOV_037": 0.8253,
+        "FOV_038": 0.7742,
+        "FOV_039": 0.7543,
+        "FOV_040": 0.8692
+      },
+      "mean_cells": 84.0
+    },
+    {
+      "cellprob_threshold": -1.5,
+      "flow_threshold": 0.6,
+      "mean_ari": 0.8125641567097184,
+      "per_fov": {
+        "FOV_036": 0.8407,
+        "FOV_037": 0.8394,
+        "FOV_038": 0.7435,
+        "FOV_039": 0.7752,
+        "FOV_040": 0.864
+      },
+      "mean_cells": 104.8
+    },
+    {
+      "cellprob_threshold": -1.5,
+      "flow_threshold": 0.8,
+      "mean_ari": 0.8088716506325238,
+      "per_fov": {
+        "FOV_036": 0.835,
+        "FOV_037": 0.8439,
+        "FOV_038": 0.7368,
+        "FOV_039": 0.7752,
+        "FOV_040": 0.8535
+      },
+      "mean_cells": 109.2
+    },
+    {
+      "cellprob_threshold": -2.0,
+      "flow_threshold": 0.4,
+      "mean_ari": 0.8063981002960503,
+      "per_fov": {
+        "FOV_036": 0.824,
+        "FOV_037": 0.8242,
+        "FOV_038": 0.7353,
+        "FOV_039": 0.7866,
+        "FOV_040": 0.8619
+      },
+      "mean_cells": 97.2
+    },
+    {
+      "cellprob_threshold": -2.0,
+      "flow_threshold": 0.6,
+      "mean_ari": 0.7977575117153064,
+      "per_fov": {
+        "FOV_036": 0.8325,
+        "FOV_037": 0.8249,
+        "FOV_038": 0.7181,
+        "FOV_039": 0.7624,
+        "FOV_040": 0.8508
+      },
+      "mean_cells": 103.4
+    },
+    {
+      "cellprob_threshold": -2.0,
+      "flow_threshold": 0.8,
+      "mean_ari": 0.7929892856833491,
+      "per_fov": {
+        "FOV_036": 0.8212,
+        "FOV_037": 0.8303,
+        "FOV_038": 0.7126,
+        "FOV_039": 0.7607,
+        "FOV_040": 0.8402
+      },
+      "mean_cells": 110.2
+    },
+    {
+      "cellprob_threshold": -2.0,
+      "flow_threshold": 0.2,
+      "mean_ari": 0.7923766990492443,
+      "per_fov": {
+        "FOV_036": 0.816,
+        "FOV_037": 0.7817,
+        "FOV_038": 0.7641,
+        "FOV_039": 0.7408,
+        "FOV_040": 0.8592
+      },
+      "mean_cells": 81.8
+    },
+    {
+      "cellprob_threshold": -3.0,
+      "flow_threshold": 0.4,
+      "mean_ari": 0.7789621479025428,
+      "per_fov": {
+        "FOV_036": 0.798,
+        "FOV_037": 0.7904,
+        "FOV_038": 0.7042,
+        "FOV_039": 0.763,
+        "FOV_040": 0.8392
+      },
+      "mean_cells": 96.0
+    },
+    {
+      "cellprob_threshold": -0.5,
+      "flow_threshold": 0.1,
+      "mean_ari": 0.7789313406175562,
+      "per_fov": {
+        "FOV_036": 0.7654,
+        "FOV_037": 0.7855,
+        "FOV_038": 0.767,
+        "FOV_039": 0.7124,
+        "FOV_040": 0.8644
+      },
+      "mean_cells": 74.2
+    },
+    {
+      "cellprob_threshold": 0.0,
+      "flow_threshold": 0.1,
+      "mean_ari": 0.7772622837867914,
+      "per_fov": {
+        "FOV_036": 0.7627,
+        "FOV_037": 0.7908,
+        "FOV_038": 0.7727,
+        "FOV_039": 0.7099,
+        "FOV_040": 0.8501
+      },
+      "mean_cells": 76.0
+    },
+    {
+      "cellprob_threshold": -3.0,
+      "flow_threshold": 0.6,
+      "mean_ari": 0.7690441866497371,
+      "per_fov": {
+        "FOV_036": 0.8091,
+        "FOV_037": 0.7904,
+        "FOV_038": 0.6831,
+        "FOV_039": 0.7326,
+        "FOV_040": 0.83
+      },
+      "mean_cells": 102.6
+    },
+    {
+      "cellprob_threshold": -3.0,
+      "flow_threshold": 0.8,
+      "mean_ari": 0.7592334705144383,
+      "per_fov": {
+        "FOV_036": 0.7894,
+        "FOV_037": 0.7956,
+        "FOV_038": 0.6689,
+        "FOV_039": 0.7278,
+        "FOV_040": 0.8145
+      },
+      "mean_cells": 111.0
+    },
+    {
+      "cellprob_threshold": -3.0,
+      "flow_threshold": 0.2,
+      "mean_ari": 0.755321514966746,
+      "per_fov": {
+        "FOV_036": 0.782,
+        "FOV_037": 0.7223,
+        "FOV_038": 0.7231,
+        "FOV_039": 0.7298,
+        "FOV_040": 0.8194
+      },
+      "mean_cells": 76.6
+    },
+    {
+      "cellprob_threshold": -1.0,
+      "flow_threshold": 0.1,
+      "mean_ari": 0.7437594645634416,
+      "per_fov": {
+        "FOV_036": 0.7052,
+        "FOV_037": 0.7584,
+        "FOV_038": 0.7381,
+        "FOV_039": 0.7008,
+        "FOV_040": 0.8163
+      },
+      "mean_cells": 69.6
+    },
+    {
+      "cellprob_threshold": -1.5,
+      "flow_threshold": 0.1,
+      "mean_ari": 0.6988351741556736,
+      "per_fov": {
+        "FOV_036": 0.6394,
+        "FOV_037": 0.7402,
+        "FOV_038": 0.7,
+        "FOV_039": 0.6728,
+        "FOV_040": 0.7418
+      },
+      "mean_cells": 63.6
+    },
+    {
+      "cellprob_threshold": -2.0,
+      "flow_threshold": 0.1,
+      "mean_ari": 0.669293718378981,
+      "per_fov": {
+        "FOV_036": 0.6067,
+        "FOV_037": 0.6787,
+        "FOV_038": 0.6818,
+        "FOV_039": 0.6627,
+        "FOV_040": 0.7166
+      },
+      "mean_cells": 58.2
+    },
+    {
+      "cellprob_threshold": -3.0,
+      "flow_threshold": 0.1,
+      "mean_ari": 0.5094930499405322,
+      "per_fov": {
+        "FOV_036": 0.4411,
+        "FOV_037": 0.4594,
+        "FOV_038": 0.5474,
+        "FOV_039": 0.4639,
+        "FOV_040": 0.6356
+      },
+      "mean_cells": 37.4
+    }
+  ]
+}

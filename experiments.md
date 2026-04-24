@@ -237,12 +237,252 @@ submission.csv (spot_id, fov, cluster_id)
 
 ---
 
+## Experiment 005 — nuclei base model
+**SLURM:** `sbatch train_nuclei.sbatch`  
+**Status:** Queued
+
+### Architecture
+- **Base model:** Cellpose nuclei (specialised for DAPI-stained nuclei)
+- **Input:** `[polyt_max, dapi_max, spot_density_8]` — same 3-channel as Exp 003
+- **Training epochs:** 300, chunk size 5
+- **LR:** 1e-5, weight_decay: 0.1
+- **Diameter at inference:** 0 (auto), cellprob_threshold: -1.0
+
+### Rationale
+DAPI directly stains cell nuclei; the nuclei base model has strong priors for nuclear morphology. Mouse brain cortex cells have distinct nuclei. Hypothesis: nuclei model adapts faster to DAPI channel and produces cleaner cell boundaries.
+
+### Results
+TBD
+
+---
+
+## Experiment 006 — cyto2 multi-scale spot density (5 channels)
+**SLURM:** `sbatch train_multiscale.sbatch`  
+**Status:** Queued
+
+### Architecture
+- **Base model:** Cellpose cyto2
+- **Input:** `[polyt_max, dapi_max, density_σ4, density_σ8, density_σ16]` — 5 channels
+  - σ=4 px (0.44 µm): sub-cellular, individual spot clusters
+  - σ=8 px (0.87 µm): medium-scale, ≈nucleus radius (current default)
+  - σ=16 px (1.74 µm): coarse, full cell-body extent
+- **Training epochs:** 300, LR 1e-5, weight_decay 0.1
+- **Script:** `python train.py --base-model cyto2 --exp-name multiscale --spot-sigmas 4,8,16`
+
+### Rationale
+Different spot density scales encode complementary spatial information: fine scale → densely transcribed nuclei, coarse scale → full cytoplasmic extent. Multi-scale context may help the model detect cells that are weakly stained in DAPI/polyT.
+
+### Results
+TBD
+
+---
+
+## Experiment 007 — best-checkpoint selection
+**SLURM:** `sbatch eval_best_checkpoint.sbatch <exp-name>`  
+**Status:** Ready (run after each training job completes)
+
+### Method
+`eval_best_checkpoint.py` loads every saved epoch checkpoint for an experiment, evaluates mean ARI on val FOVs 036–040, and promotes the best one to the canonical model path. The final epoch is not always best due to overfitting or instability.
+
+### Results
+TBD per experiment
+
+---
+
+## Experiment 008 — threshold sweep
+**SLURM:** `sbatch sweep_thresholds.sbatch <exp-name>`  
+**Status:** Ready (run after best-checkpoint selection)
+
+### Method
+`sweep_thresholds.py` grids over `cellprob_threshold` (−3.0, −2.0, −1.5, −1.0, −0.5, 0.0) × `flow_threshold` (0.1, 0.2, 0.4, 0.6, 0.8) = 30 combinations per model. Writes `best_params_<exp>.json`. Per-model optimal thresholds typically differ.
+
+### Results
+TBD
+
+---
+
+## Experiment 009 — ensemble (spot-level majority vote)
+**SLURM:** `sbatch ensemble_infer.sbatch`  
+**Status:** Ready (run after exps 005–008 are all done)
+
+### Method
+`ensemble_infer.py` loads all four trained models (cyto2, cyto3, nuclei, multiscale). For each test spot, each model assigns it to a cell or "background". Majority vote across models determines the final cluster ID. Ties broken by first-listed model.
+
+This bypasses pixel-mask merging (hard, since cell IDs don't align across models) and directly optimises the quantity ARI is computed on.
+
+### Results
+TBD
+
+---
+
+## Experiment 010 — Data augmentation (cyto2_aug, nuclei_aug, multiscale_aug)
+**SLURM jobs:** 169206 (cyto2_aug), 169207 (nuclei_aug), 169208 (multiscale_aug)
+**Status:** Complete
+
+### Method
+8× augmentation during training: random horizontal/vertical flips, 90° rotations, intensity jitter (±20%). Otherwise identical to Exp 003/005/006.
+
+### Results (best-checkpoint + threshold sweep)
+| Model          | Val ARI | Δ vs no-aug |
+|----------------|---------|-------------|
+| cyto2_aug      | 0.8311  | +0.0164     |
+| nuclei_aug     | 0.8344  | +0.0293     |
+| multiscale_aug | 0.8311  | +0.0224     |
+
+Augmentation improved every variant. Confirms that the model was partially overfitting to 35 fixed FOVs.
+
+---
+
+## Experiment 011 — Learning-rate schedules (cosine, warmup, warmup_long, warmup_lowwd)
+**Status:** Complete
+
+### Method
+Explored alternatives to flat LR=1e-5:
+- **cosine:** cosine annealing 1e-5 → 1e-7 over 300 epochs
+- **warmup:** 20-epoch linear warmup 0 → 1e-5, then constant
+- **warmup_long:** warmup + 500 epochs total (more training)
+- **warmup_lowwd:** warmup + weight_decay 0.01 (vs default 0.1)
+
+### Results (best-checkpoint + threshold sweep)
+| Model                  | Val ARI |
+|------------------------|---------|
+| cyto2_cosine           | 0.8267  |
+| cyto2_warmup           | 0.8324  |
+| cyto2_warmup_long      | **0.8361** (best Cellpose) |
+| cyto2_warmup_lowwd     | 0.8245  |
+| nuclei_cosine          | 0.8174  |
+| nuclei_warmup          | 0.8240  |
+| nuclei_warmup_long     | 0.8337  |
+| multiscale_cosine      | 0.8245  |
+
+Warmup + long training consistently wins. `cyto2_warmup_long` gave our best Cellpose val ARI.
+
+---
+
+## Experiment 012 — Z-stack features
+**Status:** Complete
+
+### 012a — multi-z training (`cyto2_multiz`)
+Train on each z-plane as a separate sample (6× data: 5 z-planes + max-proj per FOV) instead of max-proj only.
+Result: val ARI 0.7960 — **worse**. Hypothesis: individual z-planes are noisier than max-proj and the model loses focus context.
+
+### 012b — z-statistics channels (`cyto2_zstats`, `nuclei_zstats`)
+7-channel input: `[polyt_max, dapi_max, polyt_mean, dapi_mean, polyt_std, dapi_std, spot_density]`.
+Rationale: mean/std across z encodes focus quality.
+Result: trained but did not outperform simpler 3-channel variants on val; not submitted.
+
+---
+
+## Experiment 013 — Non-Cellpose architectures
+
+### 013a — StarDist2D (`stardist`)
+**SLURM jobs:** 169805 (initial, cancelled at ep 28), 171438 (resume, cancelled ep 35), 171474 (resume, cancelled ep 35), 171501 (val-only)
+**Status:** In progress (chained resumes)
+
+#### Architecture
+StarDist2D fine-tuned from pretrained `2D_versatile_fluo`. Polygon-based segmentation via radial distance regression — fundamentally different from Cellpose's flow-field head.
+
+- **Input:** DAPI max-projection only, single channel (pretrained weights expect 1-ch)
+- **Normalization:** per-image 1–99.8 percentile
+- **Training:** 200 epochs, 100 steps/epoch, built-in StarDist augmentation
+- **Validation data:** held-out FOVs 036–040 passed to `model.train(validation_data=…)`
+- **Post-training:** `optimize_thresholds()` on val
+
+#### Results
+| Training extent | Val ARI | Kaggle |
+|---|---|---|
+| 28 epochs (partial, 169805 cancelled) — `stardist_v1` | 0.8039 | **0.7627** ✅ (current best) |
+| ~98 epochs (post 171438+171474 chain) | 0.8269 | not submitted (weights overwritten by next chain) |
+| ~180 epochs (chained resumes) — `stardist_v2` | 0.8247 | **0.7421** ❌ regression |
+
+Despite StarDist having a **lower** val ARI than the best Cellpose variant (0.8039 vs 0.8361), 28-ep scored **higher** on Kaggle (0.7627 vs 0.7464 for cyto2). The radial-polygon head generalizes better across the val→test domain shift (test FOVs ~15% brighter).
+
+**But pushing StarDist further hurts.** At ~180 epochs val rose to 0.8247 (+0.02) but Kaggle dropped to 0.7421 (-0.02). Conclusion: ~28 epochs is the sweet spot for generalization on this dataset. The model is overfitting to val FOVs 036–040, which drift in the same direction as train FOVs but not with the test FOVs' brightness shift.
+
+### 013b — InstanSeg (zero-shot)
+`infer_instanseg.py` runs pretrained `fluorescence_nuclei_and_cells` zero-shot on val and test. Explored as a no-training alternative; val ARI below Cellpose baseline, not pursued.
+
+### 013c — U-Net (vanilla PyTorch, scaffolded only)
+`src/unet.py`, `train_unet.py`, `infer_unet.py`: 3-class semantic (bg / interior / boundary) + watershed. Scaffolded and ready to train, but deprioritized in favor of StarDist training after the 0.7627 result. Not yet run.
+
+---
+
+## Experiment 014 — Failed directions
+
+| Approach | Kaggle | Notes |
+|----------|--------|-------|
+| Test-time augmentation (TTA, 8× flip/rot) | 0.7461 | **Worse** than no-TTA (0.7464). Mask merging across augmentations loses more than it gains. |
+| NN-radius spot assignment (vs mask lookup) | 0.5063 | **Actively harmful**. Nearest-neighbor assignment by centroid distance ignores mask shape. |
+| cyto3 (first run) | — | Collapsed: trained on broken-coordinate masks (empty). Retrained from scratch → val 0.8137. |
+| LR >> 1e-5 on Cellpose v4 | — | Model collapses within a few epochs. Cellpose v4 default is 1e-5 (500× lower than v3's 0.005). |
+
+---
+
+## Experiment 015 — Ensemble (`ensemble_val_eval.py`, `ensemble_infer.py`)
+**Status:** Infrastructure ready, ensemble did not beat best single model
+
+Spot-level majority vote across all trained Cellpose variants. Did not beat the best single-model val ARI consistently; not submitted.
+
+---
+
+## HPC Operational Notes
+
+### Partition `c12m85-a100-1` kills jobs at xx:01:01 every hour
+Discovered 2026-04-23. Two consecutive StarDist resume jobs were killed at exactly :01:01 past the hour:
+- 171438: ran 08:34 → cancelled 09:01:01 (ep 35/200)
+- 171474: ran 10:33 → cancelled 11:01:01 (ep 35/200)
+
+State "CANCELLED by 0" with `ExitCode 0:15` (SIGTERM from admin). `--requeue` does **not** fire because admin `scancel` doesn't set the requeue flag. Workaround: chain manual resubmits (each window yields ~35 epochs of training before the kill).
+
+### Checkpointing
+All Cellpose training chunks every 5 epochs to `models/<exp>/cellpose_<exp>_ep<NNN>` with `train_state.json` tracking progress. StarDist uses Keras `ModelCheckpoint` → `weights_best.h5` / `weights_last.h5` in `models/<exp>/`.
+
+---
+
+## Final Results Summary
+
+### Val ARI across all experiments (best-checkpoint + threshold sweep)
+| Model                  | Val ARI |
+|------------------------|---------|
+| cyto2 (baseline 3-ch)  | 0.8147  |
+| cyto3                  | 0.8137  |
+| nuclei                 | 0.8051  |
+| multiscale             | 0.8087  |
+| cyto2_multiz           | 0.7960  |
+| cyto2_aug              | 0.8311  |
+| nuclei_aug             | 0.8344  |
+| multiscale_aug         | 0.8311  |
+| cyto2_cosine           | 0.8267  |
+| nuclei_cosine          | 0.8174  |
+| multiscale_cosine      | 0.8245  |
+| cyto2_warmup           | 0.8324  |
+| cyto2_warmup_long      | **0.8361** |
+| cyto2_warmup_lowwd     | 0.8245  |
+| nuclei_warmup          | 0.8240  |
+| nuclei_warmup_long     | 0.8337  |
+| cyto2_long             | 0.8232  |
+| stardist (28 ep)       | 0.8039  |
+| stardist (~98 ep)      | 0.8269  |
+
+### Kaggle submissions
+| Model                        | Kaggle Public |
+|------------------------------|---------------|
+| Pretrained cyto2 baseline    | 0.632         |
+| cyto2 (Exp 002, 2-ch)        | 0.6667        |
+| cyto2 (best 3-ch + sweep)    | 0.7464        |
+| cyto2 + TTA                  | 0.7461        |
+| cyto2 + NN-radius assignment | 0.5063        |
+| nuclei_cosine                | 0.7588        |
+| **stardist (28 ep)**         | **0.7627** ✅ current best |
+
+### Key finding
+**Val ARI rankings are not a reliable Kaggle proxy across architectures.** StarDist ranked mid-table on val ARI but tops Kaggle — its radial-polygon head survives the val→test domain shift better than Cellpose flow fields. Within one architecture, val ARI rankings are trustworthy.
+
+---
+
 ## TODO / Future Directions
 
-- [ ] Update Exp 003 / 004 results when jobs complete
-- [ ] Evaluate intermediate checkpoints (pick best val ARI, not last epoch)
-- [ ] Try `nuclei` base model — DAPI directly stains nuclei, may be strong signal
-- [ ] 3D Cellpose — segment across all 5 z-planes simultaneously
-- [ ] Ensemble cyto2 + cyto3 predictions
-- [ ] Systematic sweep of `cellprob_threshold` and `flow_threshold`
-- [ ] Data augmentation (flip, rotate, intensity jitter) during training
+- [ ] Finish StarDist training (~98 → 200 epochs) via chained resumes; re-evaluate
+- [ ] Submit best StarDist checkpoint once val ARI plateaus
+- [ ] Consider non-preemptable partitions for uninterrupted long runs
+- [ ] U-Net baseline: actually train (scaffolded but not run)

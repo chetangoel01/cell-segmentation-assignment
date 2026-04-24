@@ -1,43 +1,4 @@
-"""
-Generate a Kaggle submission CSV from your segmentation masks.
-
-The competition evaluates spot-to-cell clustering using the Adjusted Rand Index (ARI).
-Your submission is just: for each spot in test_spots.csv, which cluster (cell) does it
-belong to?
-
-You provide a segmentation mask (2048 x 2048, 0 = background, >0 = cell ID) for each of
-the 4 test FOVs. This script looks up each spot in the mask using the pre-computed
-image_row / image_col columns from test_spots.csv.
-
------------------------------------------------------------------------------
-Example usage in a notebook (recommended):
------------------------------------------------------------------------------
-
-    import pandas as pd
-    from generate_submission import build_submission
-
-    # Run your segmentation pipeline on each test FOV.
-    masks = {}
-    for fov in ['FOV_A', 'FOV_B', 'FOV_C', 'FOV_D']:
-        dapi = load_dapi(f'test/{fov}/...')   # your loading code
-        masks[fov] = my_segmentation(dapi)     # (2048, 2048), 0 = bg, >0 = cell
-
-    test_spots = pd.read_csv('test_spots.csv')
-    submission = build_submission(masks, test_spots)
-    submission.to_csv('submission.csv', index=False)
-
------------------------------------------------------------------------------
-Example usage from the command line:
------------------------------------------------------------------------------
-
-    python generate_submission.py \
-        --mask_A FOV_A_mask.npy \
-        --mask_B FOV_B_mask.npy \
-        --mask_C FOV_C_mask.npy \
-        --mask_D FOV_D_mask.npy \
-        --test_spots test_spots.csv \
-        --output submission.csv
-"""
+"""Build a Kaggle submission CSV from segmentation masks and test spots."""
 
 import argparse
 import numpy as np
@@ -45,24 +6,13 @@ import pandas as pd
 
 
 def build_submission(masks: dict, test_spots: pd.DataFrame) -> pd.DataFrame:
-    """
-    Build a Kaggle submission DataFrame from segmentation masks and test spots.
+    """Map each spot to its cell label and return a submission DataFrame.
 
-    Parameters
-    ----------
-    masks : dict
-        Dict mapping FOV name to a 2D segmentation mask.
-        e.g. {'FOV_A': np.ndarray(2048, 2048), 'FOV_B': ..., ...}
-        Each mask has 0 = background, >0 = cell ID.
-    test_spots : pd.DataFrame
-        The test_spots.csv DataFrame. Must have columns:
-        spot_id, fov, image_row, image_col
-
-    Returns
-    -------
-    pd.DataFrame
-        Submission DataFrame with columns: spot_id, fov, cluster_id
-        (same row order as test_spots)
+    Args:
+        masks: {fov_name: (2048,2048) int array} — 0=background, >0=cell ID
+        test_spots: DataFrame with columns spot_id, fov, image_row, image_col
+    Returns:
+        DataFrame with columns spot_id, fov, cluster_id (same order as test_spots)
     """
     required = ['spot_id', 'fov', 'image_row', 'image_col']
     missing = [c for c in required if c not in test_spots.columns]
@@ -85,13 +35,11 @@ def build_submission(masks: dict, test_spots: pd.DataFrame) -> pd.DataFrame:
         cols = fov_spots['image_col'].values
         valid = (rows >= 0) & (rows < 2048) & (cols >= 0) & (cols < 2048)
 
-        cluster_ids = np.full(len(fov_spots), 'background', dtype=object)
         mask_vals = np.zeros(len(fov_spots), dtype=int)
         mask_vals[valid] = mask[rows[valid], cols[valid]]
-        for i in range(len(fov_spots)):
-            if mask_vals[i] > 0:
-                # Prefix with FOV name so cluster IDs are unique across FOVs
-                cluster_ids[i] = f'{fov}_cell_{mask_vals[i]}'
+        in_cell = mask_vals > 0
+        cluster_ids = np.full(len(fov_spots), 'background', dtype=object)
+        cluster_ids[in_cell] = np.array([f'{fov}_cell_{v}' for v in mask_vals[in_cell]])
 
         n_assigned = (cluster_ids != 'background').sum()
         print(

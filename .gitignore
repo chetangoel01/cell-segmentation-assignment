@@ -23,3 +23,12 @@ logs/
 # model artifacts (keep folder)
 models/*
 !models/.gitkeep
+
+# Singularity overlay (6GB binary, regen with mksquashfs)
+overlay-*.ext3
+
+# Miniforge installer (101MB, redownload from upstream)
+Miniforge3-*.sh
+
+# Claude Code agent state
+.claude/
