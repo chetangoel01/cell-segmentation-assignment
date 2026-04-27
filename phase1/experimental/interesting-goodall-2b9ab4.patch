@@ -1,0 +1,156 @@
+diff --git a/ensemble_infer.py b/ensemble_infer.py
+index 594f146..cc2e54d 100644
+--- a/ensemble_infer.py
++++ b/ensemble_infer.py
+@@ -35,7 +35,7 @@ parser.add_argument("--flow-threshold", type=float, default=0.4)
+ args = parser.parse_args()
+ 
+ EXP_NAMES  = args.exp_names
+-DATA_ROOT  = "/scratch/cg4652/competition"
++DATA_ROOT  = os.environ.get("MERFISH_DATA_ROOT", "/scratch/cg4652/competition")
+ TEST_FOVS  = ["FOV_A", "FOV_B", "FOV_C", "FOV_D"]
+ 
+ # Build sigma map
+diff --git a/ensemble_val_eval.py b/ensemble_val_eval.py
+index 6b6767d..fd7b301 100644
+--- a/ensemble_val_eval.py
++++ b/ensemble_val_eval.py
+@@ -35,7 +35,7 @@ parser.add_argument("--cellprob-threshold", type=float, default=-1.0)
+ parser.add_argument("--flow-threshold", type=float, default=0.4)
+ args = parser.parse_args()
+ 
+-DATA_ROOT = "/scratch/cg4652/competition"
++DATA_ROOT = os.environ.get("MERFISH_DATA_ROOT", "/scratch/cg4652/competition")
+ VAL_FOVS  = [f"FOV_{i:03d}" for i in range(36, 41)]
+ 
+ # Build sigma map — auto-detect multiscale from best_params or default to 8
+diff --git a/eval_best_checkpoint.py b/eval_best_checkpoint.py
+index 0a4debf..d90cfab 100644
+--- a/eval_best_checkpoint.py
++++ b/eval_best_checkpoint.py
+@@ -40,7 +40,7 @@ args = parser.parse_args()
+ 
+ EXP_NAME    = args.exp_name
+ SPOT_SIGMAS = [float(s) for s in args.spot_sigmas.split(",")]
+-DATA_ROOT   = "/scratch/cg4652/competition"
++DATA_ROOT   = os.environ.get("MERFISH_DATA_ROOT", "/scratch/cg4652/competition")
+ MODEL_DIR   = f"models/{EXP_NAME}"
+ MODEL_NAME  = f"cellpose_{EXP_NAME}"
+ # Cellpose saves epoch checkpoints into a nested models/ subdir
+diff --git a/infer.py b/infer.py
+index 5251011..4e1809c 100644
+--- a/infer.py
++++ b/infer.py
+@@ -64,7 +64,7 @@ args = parser.parse_args()
+ 
+ EXP_NAME    = args.exp_name
+ SPOT_SIGMAS = [float(s) for s in args.spot_sigmas.split(",")]
+-DATA_ROOT   = "/scratch/cg4652/competition"
++DATA_ROOT   = os.environ.get("MERFISH_DATA_ROOT", "/scratch/cg4652/competition")
+ TEST_FOVS   = ["FOV_A", "FOV_B", "FOV_C", "FOV_D"]
+ 
+ CELLPROB_THRESH = args.cellprob_threshold
+diff --git a/infer_instanseg.py b/infer_instanseg.py
+index dd3c3c8..b08f98e 100644
+--- a/infer_instanseg.py
++++ b/infer_instanseg.py
+@@ -25,7 +25,7 @@ parser.add_argument("--val-only", action="store_true",
+                     help="Only run val FOVs (skip test / submission)")
+ args = parser.parse_args()
+ 
+-DATA_ROOT  = "/scratch/cg4652/competition"
++DATA_ROOT  = os.environ.get("MERFISH_DATA_ROOT", "/scratch/cg4652/competition")
+ PIXEL_SIZE = 0.109  # µm/px
+ 
+ from instanseg import InstanSeg
+diff --git a/infer_stardist.py b/infer_stardist.py
+index f212008..641e7bf 100644
+--- a/infer_stardist.py
++++ b/infer_stardist.py
+@@ -19,7 +19,7 @@ from stardist.models import StarDist2D   # noqa: E402
+ from csbdeep.utils import normalize      # noqa: E402
+ 
+ EXP_NAME  = args.exp_name
+-DATA_ROOT = "/scratch/cg4652/competition"
++DATA_ROOT = os.environ.get("MERFISH_DATA_ROOT", "/scratch/cg4652/competition")
+ TEST_FOVS = ["FOV_A", "FOV_B", "FOV_C", "FOV_D"]
+ BASEDIR   = "models"
+ 
+diff --git a/infer_unet.py b/infer_unet.py
+index b86bc55..632a0d9 100644
+--- a/infer_unet.py
++++ b/infer_unet.py
+@@ -21,7 +21,7 @@ parser.add_argument("--fg-thresh", type=float, default=0.5)
+ parser.add_argument("--marker-thresh", type=float, default=0.7)
+ args = parser.parse_args()
+ 
+-DATA_ROOT = "/scratch/cg4652/competition"
++DATA_ROOT = os.environ.get("MERFISH_DATA_ROOT", "/scratch/cg4652/competition")
+ TEST_FOVS = ["FOV_A", "FOV_B", "FOV_C", "FOV_D"]
+ EXP = args.exp_name
+ ckpt_path = f"models/{EXP}/unet_best.pt"
+diff --git a/sweep_thresholds.py b/sweep_thresholds.py
+index ae1f608..616c309 100644
+--- a/sweep_thresholds.py
++++ b/sweep_thresholds.py
+@@ -39,7 +39,7 @@ EXP_NAME         = args.exp_name
+ SPOT_SIGMAS      = [float(s) for s in args.spot_sigmas.split(",")]
+ CP_THRESHOLDS    = [float(t) for t in args.cellprob_thresholds.split(",")]
+ FLOW_THRESHOLDS  = [float(t) for t in args.flow_thresholds.split(",")]
+-DATA_ROOT        = "/scratch/cg4652/competition"
++DATA_ROOT        = os.environ.get("MERFISH_DATA_ROOT", "/scratch/cg4652/competition")
+ MODEL_DIR        = f"models/{EXP_NAME}"
+ FINAL_MODEL      = os.path.join(MODEL_DIR, f"cellpose_{EXP_NAME}")
+ 
+diff --git a/tests/test_io.py b/tests/test_io.py
+index 0089ba2..d3d8696 100644
+--- a/tests/test_io.py
++++ b/tests/test_io.py
+@@ -4,7 +4,7 @@ import pytest
+ from src.io import load_dax, get_dapi_stack, get_polyt_stack
+ 
+ 
+-DATA_ROOT = "/scratch/pl2820/competition"
++DATA_ROOT = os.environ.get("MERFISH_DATA_ROOT", "/scratch/pl2820/competition")
+ 
+ 
+ def _epi_path():
+diff --git a/train.py b/train.py
+index 98f85be..4d2e088 100644
+--- a/train.py
++++ b/train.py
+@@ -66,7 +66,7 @@ args = parser.parse_args()
+ EXP_NAME = args.exp_name or args.base_model
+ SPOT_SIGMAS = [float(s) for s in args.spot_sigmas.split(",")]
+ 
+-DATA_ROOT      = "/scratch/cg4652/competition"
++DATA_ROOT      = os.environ.get("MERFISH_DATA_ROOT", "/scratch/cg4652/competition")
+ PIXEL_SIZE     = 0.109
+ MODEL_SAVE_DIR = f"models/{EXP_NAME}"
+ MODEL_NAME     = f"cellpose_{EXP_NAME}"
+diff --git a/train_stardist.py b/train_stardist.py
+index 3964572..75265c5 100644
+--- a/train_stardist.py
++++ b/train_stardist.py
+@@ -47,7 +47,7 @@ from stardist import fill_label_holes           # noqa: E402
+ from csbdeep.utils import normalize             # noqa: E402
+ 
+ EXP_NAME   = args.exp_name
+-DATA_ROOT  = "/scratch/cg4652/competition"
++DATA_ROOT  = os.environ.get("MERFISH_DATA_ROOT", "/scratch/cg4652/competition")
+ BASEDIR    = "models"
+ MODEL_DIR  = os.path.join(BASEDIR, EXP_NAME)
+ TOTAL_EPOCHS = args.epochs
+diff --git a/train_unet.py b/train_unet.py
+index 7157a6d..9f40afe 100644
+--- a/train_unet.py
++++ b/train_unet.py
+@@ -44,7 +44,7 @@ parser.add_argument("--ce-weight", type=float, default=0.5,
+                     help="Weight on cross-entropy in CE+Dice loss (Dice gets 1-this)")
+ args = parser.parse_args()
+ 
+-DATA_ROOT = "/scratch/cg4652/competition"
++DATA_ROOT = os.environ.get("MERFISH_DATA_ROOT", "/scratch/cg4652/competition")
+ EXP_NAME = args.exp_name
+ MODEL_DIR = f"models/{EXP_NAME}"
+ os.makedirs(MODEL_DIR, exist_ok=True)
