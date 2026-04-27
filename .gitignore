@@ -1,17 +1,19 @@
-data/
+phase1/data/
+phase2/data/
 
 # python
 .venv/
 __pycache__/
 *.pyc
-.pytest_cache/
 
 # macOS
 .DS_Store
 
 # large downloaded artifacts
-docs/*.zip
-docs/*.pdf
+phase1/docs/*.zip
+phase1/docs/*.pdf
+phase2/docs/*.zip
+phase2/docs/*.pdf
 
 # outputs
 submission*.csv
@@ -21,8 +23,10 @@ submission_code.zip
 logs/
 
 # model artifacts (keep folder)
-models/*
-!models/.gitkeep
+phase1/models/*
+!phase1/models/.gitkeep
+phase2/models/*
+!phase2/models/.gitkeep
 
 # Singularity overlay (6GB binary, regen with mksquashfs)
 overlay-*.ext3
