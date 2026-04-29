@@ -22,6 +22,10 @@ submission_code.zip
 # logs
 logs/
 
+# phase2 runner artifacts
+phase2/runs/
+phase2/.runs/
+
 # model artifacts (keep folder)
 phase1/models/*
 !phase1/models/.gitkeep

@@ -7,7 +7,13 @@ from shapely.geometry import Polygon
 
 
 def parse_boundary_polygon(xs_str: str, ys_str: str) -> Optional[Polygon]:
-    """Parse comma-separated boundaryX/boundaryY strings into a Shapely Polygon."""
+    """Parse comma-separated boundaryX/boundaryY strings into a Shapely Polygon.
+
+    Returns None if either input is missing/blank/NaN — some cells only have
+    polygons at a subset of z-planes, and pandas reads those as float('nan').
+    """
+    if not isinstance(xs_str, str) or not isinstance(ys_str, str):
+        return None
     if not xs_str or not ys_str:
         return None
     xs = [float(v) for v in xs_str.split(",") if v != ""]
