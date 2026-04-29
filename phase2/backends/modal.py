@@ -42,6 +42,8 @@ def _image_for(preset: str):
         return base
     if preset == "sklearn":
         return base.pip_install("scikit-learn", "joblib")
+    if preset == "cellpose":
+        return base.pip_install("scikit-learn", "joblib", "cellpose>=4.0", "torch")
     raise ValueError(f"unknown modal_image preset {preset!r}")
 
 

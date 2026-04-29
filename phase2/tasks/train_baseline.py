@@ -154,6 +154,9 @@ def _train_and_eval(X_tr, y_tr, X_va, y_va, model_kind: str, knn_k: int):
 def _run(args: argparse.Namespace) -> int:
     from phase2.src import io
 
+    stages: dict[str, float] = {}
+    wall_t0 = time.time()
+
     train_fovs = _expand_fov_list(args.train_fovs)
     val_fovs = _expand_fov_list(args.val_fovs)
     print(f"train FOVs: {train_fovs}")
@@ -173,8 +176,9 @@ def _run(args: argparse.Namespace) -> int:
     cells = pd.read_csv(cells_path, index_col=0)
     labels = pd.read_csv(labels_path)
     spots = pd.read_csv(spots_path)
+    stages["csv_load"] = time.time() - t0
     print(f"  cells: {len(cells):,}   labels: {len(labels):,}   spots: {len(spots):,}   "
-          f"({time.time()-t0:.1f}s)")
+          f"({stages['csv_load']:.1f}s)")
 
     # Filter spots to FOVs we care about — saves work on shapely calls.
     keep_fovs = set(train_fovs) | set(val_fovs)
@@ -188,21 +192,27 @@ def _run(args: argparse.Namespace) -> int:
     print(f"  gene vocab: {len(genes)} genes")
 
     print("\nfeaturizing TRAIN cells …")
+    t0 = time.time()
     X_tr, lab_tr, ids_tr = _build_features(train_fovs, args.max_cells,
                                            cells, labels, spots, gene_to_idx)
-    print(f"  X_train shape: {X_tr.shape}")
+    stages["featurize_train"] = time.time() - t0
+    print(f"  X_train shape: {X_tr.shape}  ({stages['featurize_train']:.2f}s)")
 
     if val_fovs:
         print("\nfeaturizing VAL cells …")
+        t0 = time.time()
         X_va, lab_va, ids_va = _build_features(val_fovs, args.max_cells,
                                                cells, labels, spots, gene_to_idx)
-        print(f"  X_val shape: {X_va.shape}")
+        stages["featurize_val"] = time.time() - t0
+        print(f"  X_val shape: {X_va.shape}  ({stages['featurize_val']:.2f}s)")
     else:
         X_va, lab_va, ids_va = None, {lvl: np.array([]) for lvl in LEVELS}, []
 
     print("\nnormalizing …")
+    t0 = time.time()
     X_tr_n = _normalize(X_tr)
     X_va_n = _normalize(X_va) if X_va is not None else None
+    stages["normalize"] = time.time() - t0
 
     out_dir = Path(args.out_dir) if args.out_dir else (
         Path(__file__).resolve().parents[1] / "runs" /
@@ -224,26 +234,33 @@ def _run(args: argparse.Namespace) -> int:
         print(f"\n=== {lvl} ===")
         y_tr = lab_tr[lvl]
         y_va = lab_va[lvl]
-        # sklearn refuses single-class — bail with NaN if it happens.
         if len(set(y_tr)) < 2:
             print(f"  [skip] only one class in train: {set(y_tr)}")
             metrics["per_level"][LEVEL_OUT[lvl]] = {"skipped": "single-class train"}
             continue
+        t0 = time.time()
         clf, m = _train_and_eval(X_tr_n, y_tr, X_va_n, y_va, args.model, args.knn_k)
-        m.pop("predictions", None)  # don't dump the full pred list to json by default
+        elapsed = time.time() - t0
+        stages[f"fit_{LEVEL_OUT[lvl]}"] = elapsed
+        m.pop("predictions", None)
         if m:
             print(f"  train n={m['n_train_cells']}  val n={m['n_val_cells']}  "
-                  f"acc={m['accuracy']:.3f}  ari={m['ari_cells']:.3f}")
+                  f"acc={m['accuracy']:.3f}  ari={m['ari_cells']:.3f}  "
+                  f"({elapsed:.2f}s, {len(set(y_tr))} classes)")
         else:
-            print(f"  no validation set — train n={len(y_tr)}")
+            print(f"  no validation set — train n={len(y_tr)}  ({elapsed:.2f}s)")
         metrics["per_level"][LEVEL_OUT[lvl]] = m
-        # Save the trained model.
         import joblib
         joblib.dump({"clf": clf, "genes": genes},
                     out_dir / f"model_{LEVEL_OUT[lvl]}.joblib")
 
+    stages["wall_total"] = time.time() - wall_t0
+    metrics["stage_timings_s"] = stages
     (out_dir / "metrics.json").write_text(json.dumps(metrics, indent=2))
     print(f"\nmetrics → {out_dir / 'metrics.json'}")
+    print("\n=== stage timings ===")
+    for k, v in stages.items():
+        print(f"  {k:<22} {v:6.2f}s")
     return 0
 
 
