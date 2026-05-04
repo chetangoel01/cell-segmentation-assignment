@@ -1,0 +1,32 @@
+{
+  "as_of": "2026-05-04 evening",
+  "phase1_kaggle_baseline_to_beat": 0.7627,
+  "experiments": {
+    "smoke_gate": {
+      "passed": true,
+      "in_cell_dapi_ratio": 5.23,
+      "fov_001_ari_cyto2_v4": 0.4909,
+      "note": "coord convention verified correct"
+    },
+    "mediar_zero_shot": {
+      "val_ari_per_fov": {
+        "FOV_036": 0.7072,
+        "FOV_037": 0.7552,
+        "FOV_038": 0.6166,
+        "FOV_039": 0.6375,
+        "FOV_040": 0.7323
+      },
+      "val_ari_mean": 0.6898,
+      "with_min_area_4000_filter": 0.7073,
+      "note": "above cyto2 baseline 0.632 (+0.058) but below StarDist 0.7627 Kaggle"
+    }
+  },
+  "phase1_submitted_csv": null,
+  "phase1_decision": "do not submit; foundation-model zero-shot below StarDist baseline; existing 0.7627 stands",
+  "phase2_status": "not addressed in this session; deadline 23:55 EST",
+  "next_steps": [
+    "Optionally fine-tune MEDIAR (~1-2h on Modal). Plan stub at modal_app.py.",
+    "For Phase-2 tonight: per HANDOFF.md, run the 20260501-133138 config (val 0.5840) on Phase-2 test FOVs and submit. That's the highest-EV Phase-2 move and is independent of Phase-1.",
+    "CellSAM remains blocked on DeepCell signup (vendor-side issue)."
+  ]
+}
