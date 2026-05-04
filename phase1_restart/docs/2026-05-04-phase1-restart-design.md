@@ -16,7 +16,7 @@ Phase-1 of the MERFISH cell-segmentation project assigns each mRNA spot in the 4
 - **Phase-2 dependency:** Phase-2 (cell-type classification, deadline 2026-05-04 23:55 EST) consumes Phase-1 masks directly. Better masks change the per-cell feature distribution that the Phase-2 classifier sees. A Phase-1 win cascades into a Phase-2 win **iff** we can re-run the Phase-2 inference path before deadline.
 - **Untried lever:** Every prior experiment is in the U-Net + radial-polygon family (Cellpose `cyto2/cyto3/nuclei`, multiscale Cellpose, U-Net, StarDist, InstanSeg). Foundation models with biology-specific pretraining (CellSAM, MEDIAR, Mesmer, μSAM, DeepCell) have **never been tried**. The thesis: **pretraining-distribution match is the lever that buys ≥ 5 ARI points**, because the existing models are limited by what cyto2/3 saw during training, not by architecture.
 
-This restart is a clean-slate `phase1-restart/` folder, parallel to existing work. No warm-start from any prior experiment checkpoint. Pretrained *foundation-model* weights (TissueNet, LIVECell) are used as the fine-tune starting point — that's the entire point of the approach.
+This restart is a clean-slate `phase1_restart/` folder, parallel to existing work. No warm-start from any prior experiment checkpoint. Pretrained *foundation-model* weights (TissueNet, LIVECell) are used as the fine-tune starting point — that's the entire point of the approach.
 
 ## 2. Goal & success criterion
 
@@ -40,7 +40,7 @@ This restart is a clean-slate `phase1-restart/` folder, parallel to existing wor
 ## 3. Architecture
 
 ```
-phase1-restart/
+phase1_restart/
 ├── README.md
 ├── docs/
 │   └── 2026-05-04-phase1-restart-design.md       # this file
@@ -209,7 +209,7 @@ rerun_phase2.py --masks-dir <path>:
 
 | Block | Time   | Mac MPS                                                              | Modal (parallel)                                          | Decision gate                                                                                                      |
 |-------|--------|----------------------------------------------------------------------|-----------------------------------------------------------|--------------------------------------------------------------------------------------------------------------------|
-| **A** | 0:00–0:45 | Scaffold `phase1-restart/`. Build `pilot/{adapter,data,eval,submission,ensemble}.py` + `scripts/smoke.py`. Run smoke. | —                                                         | smoke fails → HALT, debug coords. No bake-off until smoke passes.                                                   |
+| **A** | 0:00–0:45 | Scaffold `phase1_restart/`. Build `pilot/{adapter,data,eval,submission,ensemble}.py` + `scripts/smoke.py`. Run smoke. | —                                                         | smoke fails → HALT, debug coords. No bake-off until smoke passes.                                                   |
 | **B** | 0:45–1:45 | Implement `models/cellsam.py` + `models/mediar.py` (load_pretrained + predict only). Run zero-shot on val + test-proxy for both. Build `runs/zero_shot_summary.json`. | —                                                         | both candidates < 0.50 zero-shot → HALT. Foundation-model thesis is falsified. Ship StarDist + Phase-2 re-run only. |
 | **C** | 1:45–2:00 | Compare zero-shot val ARIs side by side. Commit fine-tune slot to **both** (parallel on Modal). | Spin up `modal_app.py`, push fine-tune jobs.              | If one zero-shot is ≥ 0.78 and clearly best, *also* fine-tune just that one (single Modal slot, save GPU credit).    |
 | **D** | 2:00–4:00 | Build `pilot/ensemble.py`, `scripts/make_submission.py`, `scripts/rerun_phase2.py`. Validate submission CSV against `sample_submission.csv` using zero-shot output as scaffold. Pre-stage Phase-2 re-run env. | **CellSAM fine-tune** (Modal A100, 50 epochs, patch 512, batch 4). **MEDIAR fine-tune** (Modal A100, 50 epochs, patch 512, batch 2). Checkpoint every 5 epochs, val ARI logged. | Modal job dies → switch to Mac MPS fine-tune for whichever survives. Val ARI plateaus by epoch 20 → early-stop, drop LR 10×, restart from best ckpt. |
@@ -217,7 +217,7 @@ rerun_phase2.py --masks-dir <path>:
 | **F** | 4:45–5:15 | Spot-level ensemble across {best fine-tuned CellSAM ckpt, best fine-tuned MEDIAR ckpt} on val + test-proxy. Pick winner: best single OR ensemble (whichever has higher test-proxy ARI). Build Phase-1 submission CSV, structural-validate, **submit to Kaggle Phase-1** (1 slot). | —                                                         | Test-proxy ARI < 0.75 → submit anyway (informational; best ckpt still goes to Phase-2 re-run regardless). Do not burn a 2nd Phase-1 Kaggle slot tonight. |
 | **G** | 5:15–6:15 | `rerun_phase2.py` with new test masks → Phase-2 submission CSV → structural-validate → **submit to Kaggle Phase-2** (before 23:55 EST). | —                                                         | New Phase-2 val < 0.55 → also submit existing 0.5840 local-best as backup (different Kaggle slot).                  |
 
-**End-of-night artifact:** `phase1-restart/runs/FINAL.json` with `{phase1_kaggle_csv, phase1_val_ari, phase1_test_proxy_ari, phase2_kaggle_csv, phase2_val_ari, model_used, ckpt_used, decisions_log}`.
+**End-of-night artifact:** `phase1_restart/runs/FINAL.json` with `{phase1_kaggle_csv, phase1_val_ari, phase1_test_proxy_ari, phase2_kaggle_csv, phase2_val_ari, model_used, ckpt_used, decisions_log}`.
 
 ## 6. Key design decisions
 
@@ -250,12 +250,12 @@ rerun_phase2.py --masks-dir <path>:
 
 ## 8. Verification (end-of-night checks)
 
-1. **Smoke** (after Block A): `python -m phase1-restart.scripts.smoke` exits 0, prints baseline cyto2 ARI ≈ 0.632 ± 0.05 and in-cell DAPI ratio ≥ 2.
+1. **Smoke** (after Block A): `python -m phase1_restart.scripts.smoke` exits 0, prints baseline cyto2 ARI ≈ 0.632 ± 0.05 and in-cell DAPI ratio ≥ 2.
 2. **Zero-shot recorded** (after Block B): `runs/zero_shot_summary.json` has rows for `{cellsam, mediar} × {val, test_proxy}`.
 3. **Fine-tune curves healthy** (during Block D): `runs/<exp>/val_curve.csv` shows val ARI increasing-or-plateau over first 20 epochs, not noisy/diverging.
 4. **Submission structural validity** (after Block F):
    ```
-   python -m phase1-restart.scripts.make_submission --validate-only outputs/submissions/<csv>
+   python -m phase1_restart.scripts.make_submission --validate-only outputs/submissions/<csv>
    ```
    exits 0 against `phase1/data/sample_submission.csv` (same row count, identical spot_id sequence, `cluster_id` is non-empty string, `fov` ∈ `{A, B, C, D}`, UTF-8).
 5. **Final reportable number** (end of Block G): `runs/FINAL.json` populated.
