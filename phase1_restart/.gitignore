@@ -1,0 +1,11 @@
+weights/
+outputs/
+runs/
+external/
+__pycache__/
+*.pyc
+.pytest_cache/
+*.npy
+*.h5
+*.pt
+*.pth
