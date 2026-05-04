@@ -163,3 +163,35 @@ def predict_smoke(fov: str = "FOV_001"):
     out_path.parent.mkdir(parents=True, exist_ok=True)
     np.save(out_path, mask)
     print(f"wrote {out_path}: max_label={mask.max()}, n_unique={len(np.unique(mask))}")
+
+
+@app.local_entrypoint()
+def predict_split(split: str = "val", out_subdir: str = ""):
+    """Run zero-shot MEDIAR on every FOV in a split, save masks locally.
+
+    splits: val | test_proxy | test
+    """
+    import sys
+    import time
+    import numpy as np
+    sys.path.insert(0, ".")
+    from phase1_restart.pilot.data import list_fovs, load_fov_channels
+
+    fovs = list_fovs(split)
+    sub = out_subdir or split
+    out_root = Path(f"phase1_restart/outputs/zero_shot/mediar/{sub}")
+    out_root.mkdir(parents=True, exist_ok=True)
+    print(f"running MEDIAR zero-shot on {len(fovs)} FOVs in split={split}: {fovs}")
+
+    for fov in fovs:
+        t0 = time.time()
+        out_path = out_root / f"{fov}_mask.npy"
+        if out_path.exists():
+            print(f"  {fov}: cached at {out_path}, skipping")
+            continue
+        img = load_fov_channels(fov, channels=["polyT", "DAPI"])
+        mask_bytes = predict_one.remote(img.tobytes(), img.shape)
+        mask = np.frombuffer(mask_bytes, dtype=np.int32).reshape(img.shape[1], img.shape[2])
+        np.save(out_path, mask)
+        print(f"  {fov}: max_label={mask.max()}, n_cells={len(np.unique(mask)) - 1}, took {time.time() - t0:.1f}s")
+    print(f"done. masks at {out_root}")
