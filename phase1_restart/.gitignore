@@ -1,7 +1,7 @@
 weights/
 outputs/
 runs/
-external/
+external/MEDIAR/
 __pycache__/
 *.pyc
 .pytest_cache/
