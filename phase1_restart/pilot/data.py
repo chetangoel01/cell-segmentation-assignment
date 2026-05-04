@@ -10,8 +10,12 @@ import pandas as pd
 from scipy.ndimage import gaussian_filter
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
-if str(REPO_ROOT) not in sys.path:
-    sys.path.insert(0, str(REPO_ROOT))
+PHASE1_ROOT = REPO_ROOT / "phase1"
+# `phase1.src.train_cellpose` does `from src.coords import ...`, so phase1/ itself
+# must also be on sys.path (so `src` resolves). REPO_ROOT alone isn't enough.
+for p in (REPO_ROOT, PHASE1_ROOT):
+    if str(p) not in sys.path:
+        sys.path.insert(0, str(p))
 
 from phase1.src import io as p1_io  # type: ignore  # noqa: E402
 
