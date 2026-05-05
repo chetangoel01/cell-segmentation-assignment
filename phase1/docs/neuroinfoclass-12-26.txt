@@ -1,0 +1,546 @@
+CS-GY 9223 / 
+CS-UY 3943 Neuroinformatics
+Prof. Erdem Varol
+Lecture 12: Spatial Transcriptomics
+1
+
+Today’s menu
+Announcements
+Genomics
+Break
+Colab
+Paper presentations
+
+2
+
+Project 3 Phase 1 is due April 24 11:55 PM
+1-3 members per team (no more than 2 grad students per team) 
+Make sure to sign up with your NYU email on Kaggle
+Undergrad and graduate grades for this section will be on the same curve
+You can switch teams for each project
+Make sure to merge teams at the very beginning to avoid merging issues - we will not be correcting for them this time to be fair to all students
+Final grades will be curved to a B+ median for the class
+Please make sure to sign up on Google Sheets for each projects (there will be a 1 point deduction for missing Google Sheet signup!)
+3
+
+Dataset - Allen mouse brain atlas
+Zhuang-ABCA-4
+4
+Gene spots
+We will cover how spots are generated next lecture
+https://mouse.brain-map.org/static/atlas 
+
+Questions on Project Setup?
+Data: Raw MERFISH imaging data from a sagittal section of mouse brain tissue - you have raw DAPI/polyT images and a list of decoded mRNA spots (position and identity)
+Your goal for this phase: Segment each cell and assign each mRNA molecule to the space it belongs to
+ARI eval Matrix: The Rand Index computes a similarity measure between two clusterings by considering all pairs of samples and counting pairs that are assigned in the same or different clusters in the predicted and true clusterings.
+
+
+
+Next phase: Cell type classification
+5
+
+Phase 1: Segmentation & Assignments
+6
+The problem is solvable: pretrained Cellpose achieves ARI = 0.63 out of the box, demonstrating that off-the-shelf deep learning models can already extract meaningful cell structure from MERFISH imaging.
+It is not trivially easy: degenerate strategies (submitting every spot as its own cell, assigning all spots to one cluster, random assignment) all score ≈ 0. The ARI metric naturally punishes both oversegmentation and undersegmentation.
+Segmentation quality drives the score: on this metric, finding the right cells matters more than anything. A single mis-segmentation splits or merges pairs of spots and breaks cluster agreement.
+Extracellular spots are important: a substantial fraction of spots lie outside cells and must be labeled as background. Assigning them to cells hurts the score.
+Room to improve: the gap from 0.63 to 1.0 is wide. Fine-tuning segmentation models on the 40 training FOVs, using 3D segmentation across z-planes, or training custom architectures (U-Net, StarDist, SAM) should all push scores higher.
+
+Phase 2 Preview - predicting cell types!
+7
+
+8
+There are multiple hierarchies of cell types (coarse to fine)
+
+Ideas - use gene expression composition inside cells + neighborhood information to determine cell types
+9
+https://www.nature.com/articles/s41467-022-35288-0 
+
+Scoring 
+10
+Data: Raw MERFISH imaging data from a sagittal section of mouse brain tissue - you have raw DAPI/polyT images and a list of decoded mRNA spots (position and identity)
+Your goal for this phase: Assign each mRNA molecule classes in 5 hierarchies (e.g. 5 label predictions per spot).
+ARI eval Matrix: The Rand Index computes a similarity measure between two clusterings by considering all pairs of samples and counting pairs that are assigned in the same or different clusters in the predicted and true clusterings.
+
+
+Standard sigmoid curve competition scoring will be done
+
+
+Due date + presentations	
+Kaggle deadline May 3, 11:59pm
+
+Private leaderboard will not be released until 430pm May 5 (last day of class)
+
+Will let the top 3 teams know on May 4, 12:01am that they have made the podium and will be asked to present your approach on May 5. Won’t say who is 1,2,3 (a secret).
+Pizza  + award ceremony on May 5.
+Report due May 10, 11:59pm.
+11
+
+Project 3 Grading (20% of grade total)
+10% for passing baseline of phase 1
+30% competition grading for phase 1
+10% for passing baseline of phase 2
+30% competition grading for phase 2
+20% for report (after phase 2)
+All curved to allow for B+ median as seen in Project 1
+
+12
+We will keep the same curve, resulting in ~76% for median score (assuming full marks on baseline and report), which will then be curved up to a B+
+
+Cloud Bursting 101
+13
+Remember you are limited to 300 GPU hours for the semester! Key practices:
+Make sure you’re calling the CPU partition (n2c48m24) for scheduling, any minute debugging issues, etc.
+Make sure you’re using MPS to run multiple jobs in parallel (this all counts towards the same GPU hour) -  LLMs (generally) don’t know how to do this for NYU Torch/HPC so make sure you use the example here
+To account for pre-empting, make sure you’re checkpointing and call for pre-empting in your SLURM job 
+Key colabs with additional resources:
+Colab 3 (detailed): https://colab.research.google.com/drive/1GRUdWB2Eh29AKRZsqk-wab1qGAtf78pl#scrollTo=taNjThK3lbiY
+Colab 11 (MPS): https://colab.research.google.com/drive/1O75SCcZnSnFA7zb6xiyxBg_BGHg2HfiE#scrollTo=4KZVJsrDqyO0 
+
+Presentations scheduled for today
+14
+https://docs.google.com/spreadsheets/d/1BCIVOoo6inOxDZbB6jAlqIs8T8HhlyWWGdXqH_RnDyY/edit?gid=0#gid=0 
+If you are missing from this list, please let us know!
+
+Take advantage of office hours for Project 3!
+15
+Prof. Varol scheduler: https://calendar.app.google/3sw3oKtqYWhe944x8 
+
+TA office hours zoom link: https://nyu.zoom.us/j/99424531208 
+
+
+Today’s menu
+Announcements
+Genomics
+Break
+Colab
+Paper presentations
+
+16
+
+Genomics - the final frontier from macro to molecular
+17
+
+Motivation - genes instruct why our brains are the way they are
+18
+
+Different genes = different cells = different function
+19
+
+20
+Goal: to build a bridge from genes to brain function
+
+21
+Example: Simultaneous analysis of structure and gene expression in the whole brain (mouse)
+
+22
+Condylis 2022 Science
+Example: Simultaneous analysis of function and gene expression in the a specific mouse brain circuit
+
+“Central dogma”: DNA -> RNA -> Protein -> Structure -> Function
+23
+Signals of interest: DNA sequence (ATGC)
+All cells have the same DNA
+Different subsets of DNA in different cells get “transcribed” into different RNA’s
+RNA encodes proteins
+Proteins make up structures in cells and connections between cells
+
+Technologies have come a long way
+24
+
+Two main flavors of genomics
+Sequencing is hard
+We can’t stick a microscope to “see” genes
+We “sequence” genes instead
+25
+Non-spatial sequencing
+Spatial sequencing
+
+How does non-spatial sequencing work?
+26
+Isolate cells
+For each cell…
+Break up all RNA molecules into smaller fragments
+For each RNA fragment
+“Read” each RNA fragment’s sequence
+Align it with an atlas of genes to identify which gene it corresponds to
+Sequence alignment algorithms!
+Wang 2009 Nat. Rev. Genetics
+
+Sequence alignment
+A central problem in bioinformatics
+Can be solved globally optimally in poly time using dynamic programming:
+Smith-Waterman algorithm
+
+Faster heuristic algorithms are used in practice e.g. BLAST (basic local alignment search tool)
+
+27
+Genome
+Query e.g. RNA fragment read
+
+Smith-Waterman algorithm (1981)
+28
+Let A = a1,a2,...,an and B = b1,b2,...,bm be the sequences to be aligned.
+Define similarity score s(a,b) > 0 and penalty for leaving a gap of size k: Wk
+Populate a scoring matrix
+
+
+4. Initialize scoring matrix with zeros in first row and column.
+5. Fill the scoring matrix using the equation below.
+
+
+29
+Smith-Waterman algorithm (1981)
+
+30
+4. Initialize scoring matrix with zeros in first row and column.
+5. Fill the scoring matrix using the equation below.
+
+
+Smith-Waterman algorithm (1981)
+
+6. Trace back starting from highest element in the scoring matrix.
+
+Complexity O(mn) - yields optimum query alignment.
+Faster heuristic approach BLAST is the gold standard today (introduced 1990).
+31
+Smith-Waterman algorithm (1981)
+
+Cells x RNA fragments → Cells x Genes 
+32
+BLAST
+Genes
+Cells
+
+A big problem: Dropout / low coverage
+33
+van Dijk 2018 Cell
+Some RNA fragments don’t get read!
+Most genes are read as zeros in most cells!
+
+
+
+One solution to dropout: Imputation
+34
+van Dijk 2018 Cell
+
+Imputing dropout
+35
+Genes
+Cells
+Cells
+van Dijk 2018 Cell
+
+Another problem: Can we identify cell types?
+36
+Approach:
+Cluster cells
+Use reference set of genes to assign likelihood to clusters
+Issue: 
+Can’t discover new cells.
+Ianevski Nat Comms 2022
+
+Other type of sequencing : Spatial transcriptomics
+37
+
+Fluorescence microscopy meets genomics: Spatial transcriptomics
+38
+Wang et al., 2018
+Amplicons -> Spots!
+Observed color: GRBBYBR
+Barcode: TCGGAGC
+Targeted gene: Atp1a3
+Gene_A: TCTGTAGene_B: GCGTGT
+……Gene_J: ATATAA
+Barcode library:
+Genes
+Imaging rounds
+Image, 
+Wash, Add reagents
+Gene_A
+Gene_B
+Gene_C
+Imaging round 1
+Imaging round 2
+Imaging round R
+Probes replicated as “Amplicons”
+in situ sequencing
+Chen et al., 2021
+Probe has the barcode, and can bind/ligate  to the targeted gene. Then this barcode )gene unique identifier is amplified, then further read out by another probe that is specific to this barcode and also have the fluorophore. 
+
+We take image in each round, so if we have 7 rounds of hybridization then we have  7 images on this region
+
+New challenges with spatial transcriptomics 
+Need to decode barcodes to get gene counts.
+Data is VERY large (think of 1nm resolution images)
+Dropout is still an issue
+Have a limited “budget” on how many genes we can barcode at a time.
+39
+Chen 2015 Science
+
+In situ barcoding!
+Technologies that use unique nucleic acid sequences to label the molecular targets (genes!)
+→ Each barcode corresponds to a gene.
+barcodes
+40
+T
+G
+A
+C
+T
+T
+T
+G
+A
+G
+C
+T
+T
+G
+A
+A
+T
+A
+Imaging rounds
+barcodes
+Gene_B
+Gene_C
+Gene_A
+Gene_A
+TCTGTA
+Position on the sequence
+Image, 
+Wash, Add reagents
+Gene_A
+Gene_B
+Gene_C
+Imaging round 1
+Imaging round 2
+Imaging round R
+Imaging to visualise different parts of the nucleotide sequence (barcodes)
+
+41
+Channel cross-talk;signal drop-out;
+phasing
+In situ barcoding images, RxC expanded(It’s not always as simple as it is supposed to be...)
+Dense, mixed signal(overlapping)
+Color channels 
+Imaging rounds
+Color channels 
+Imaging rounds
+We cannot find which genes the ‘amplicons’ (spots) correspond to :(
+Data size: (M,R,C)(M: num of pixel)
+Chen et al., 2021
+
+42
+Chen et al., 2021
+Generate demixed“per-gene density plot”
+“per-gene density plot”
+BarDensr: A model to demix the dense spatial transcriptomics data
+Use X to uncover the presence and identity of spots! 
+
+Z_r,c,j: concentration of probes of type 𝑐 which we would expect at round 𝑟, arising from a rolony with barcode 𝑗 .
+The parameters to address all tehse challenges
+
+
+
+BARcode DEmixing through Non-negative Spatial Regression
+Observation model to express the Physical process by which the observed iamge stack is… 
+
+Observation model
+43
+“per-gene density plot”
+The most important thing is F (explain F) idea is that at each m each j, etc. Happy to talk more about our observation model if theres time
+
+Inference
+44
+If the prediction by our model is reasonabbly similar to the observed data X, then the recon error is small
+We want to find the right params so that this recon error is small. 
+So we want to figure what the prams are. 
+
+
+BarDensr applied on real data Reveals the laminar distribution of neuronal subtypes
+45
+Chen et al., 2021
+The entire region shown is composed of 35 fields of view (each field of view is of size 2048 × 2048 × 1 voxels), and 65 genes are targeted. The entire process with the usage of acceleration approaches takes approximately 3 hours to compute on a GPU machine (a p3.2xlarge machine on the AWS service).
+
+
+
+
+Visualization
+Link
+46
+
+To “read” genes, one must introduce fluorescent barcode probe for each gene.
+
+Limited budget on how many genes you can profile here 
+In non-spatial transcriptomics, reads are compared against a fixed reference library.
+
+Need to “optimize” which genes to look at.
+
+PERSIST algorithm
+Gene set design
+47
+
+Applications: Functional neuromics
+Integrate transcriptomics with other modalities e.g. calcium imaging
+Paired measurement of gene expression + activity is very sought after!
+
+VERY difficult registration problem
+48
+
+Building a bridge between spatial transcriptomics and calcium imaging
+49
+Chen et al., 2023
+200 μm
+200 μm
+Spatial transcriptomics
+Calcium imaging
+Approach: Graph matching
+
+50
+Multimodality experiments: matching cells between in vivo and ex vivo images
+There are exponentially many combinations of the cells!!
+Protein
+Activity
+Cell 1
+Cell 2
+Cell J
+… 
+Ca2+ activity 
+Immunohistochemistry
+In vivo GCaMP
+Ex vivo GCaMP
+Image registration 
+3D imaging
+3D imaging
+
+Automatic registration pipeline for 3D multimodal images
+51
+Reduce the searching space step by step
+^ We need to combinatorially search for all the possible combination of cells in 3D 
+Chen et al., 2023
+
+Step A
+Correct match
+→ Reduce the possible matches based on the shape information and context
+52
+Chen et al., 2023
+
+53
+i
+2
+1
+4
+3
+j
+3
+1
+4
+2
+Source 
+Target 
+Root(set(i) = i, set(j) = j)
+(1,1)a=2,b=6
+(1,2)a=2,b=5
+(4,4)a=2,b=6
+(1,1)a=3,b=5
+(1,2)a=-∞
+(3,2)a=4,b=5
+(3,4)a=-∞
+(2,2)a=-∞
+(2,3)a=3,b=5
+(4,4)a=3,b=5
+…
+(4,4)a=5,b=5
+…
+…
+……
+…
+Step B
+Chen et al., 2023
+Its a combinatorial search problem, really hard, but in this problem with 100 cells we can solve it efficiently 
+Looking to find two matching sets of cells in invivo/exvivo, s.t. Their pairwise distance btw themselves are the same. 
+And this can be searched using depth-first search algorithm shown here. 
+
+Visualization
+54
+
+55
+https://www.youtube.com/watch?v=Sl27tROLP-E 
+
+Integrating spatial sequencing with non-spatial sequencing
+Spatial sequencing : high identifiability of cells, low gene coverage
+Non-spatial sequencing: low identifiablity of cells, higher gene coverage
+
+Can we combine to get best of both worlds?
+56
+Longo 2021 Nat. Rev. Genetics
+
+Application: molecular connectomics
+If we have paired integrated structural connectivity and gene expression for a neural population, can we decode connectivity from genetics?
+Let X be n x g gene expression matrix
+Let B be n x n connectivity matrix.
+We want to find 
+f(X,O) ~ B. 
+One potential candidate is 
+f(X,O) = X O XT  ~ B
+Interpretation: Find gene combinations in pairs of neurons that are correlated with connectivity. 
+O is a g x g matrix that encodes gene interactions that promote connectivity.
+57
+Kovacs 2020 PNAS
+
+Application: high resolution cell type classification
+If we have paired integrated functional activity and gene expression for a neural population, can we cell type / gene expression from functional activity? 
+
+Do unique cell types have a “characteristic” activity pattern?
+
+58
+Schneider 2023 Cell Reports
+
+New challenges and directions
+Rapid emergence of very large genomics datasets
+Concurrent emergence of paired measurements of connectomics and functional activity
+Can we identify new types of cells with unique genetic/functional patterns?
+Can we explain phenotypes (behavior or structure) from genetic measurements?
+We must continue building bridges between scales.
+Need to develop tractable / efficient algorithms
+59
+Bugeon 2022 Nature
+
+Today’s menu
+Announcements
+Genomics
+Break
+Colab
+Paper presentations
+
+60
+
+Today’s menu
+Announcements
+Genomics
+Break
+Colab
+Paper presentations
+
+61
+
+Colab
+https://colab.research.google.com/drive/1gRF52pBSfczhkCrLd25A-5RBxy9_Vllf 
+62
+
+Today’s menu
+Announcements
+Genomics
+Break
+Colab
+Paper presentations
+
+63
+
+Presentations
+64
+https://docs.google.com/spreadsheets/d/1BCIVOoo6inOxDZbB6jAlqIs8T8HhlyWWGdXqH_RnDyY/edit?gid=0#gid=0 

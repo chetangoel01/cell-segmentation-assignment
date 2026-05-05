@@ -48,7 +48,8 @@ def _register_builtins() -> None:
     # Imports are inside the function so plain `from phase2.tasks import Task`
     # doesn't trigger every task module's import-time work.
     from phase2.tasks import (smoke, fetch_data, train_baseline,  # noqa: F401
-                               infer_baseline, train_segmentation)
+                               infer_baseline, train_segmentation,
+                               pipeline)
 
 
 _register_builtins()

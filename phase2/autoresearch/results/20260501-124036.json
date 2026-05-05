@@ -1,0 +1,148 @@
+{
+  "config": {
+    "models_dir": "phase2/runs/baseline-codelab-rf300-log1p",
+    "val_fovs": "FOV_151,FOV_152,FOV_153,FOV_154,FOV_155,FOV_156,FOV_157,FOV_158,FOV_159,FOV_160",
+    "seg_checkpoint": "phase2/external_models/cellpose_nuclei_cosine_ep125",
+    "include_spot_density": true,
+    "spot_density_sigma": 8.0,
+    "cellpose_diameter": 0.0,
+    "cellprob_threshold": -0.5,
+    "flow_threshold": 0.4,
+    "nn_radius": 0.0,
+    "device": "auto",
+    "out": "/Users/chetangoel/Desktop/Repositories/cell-segmentation-assignment/phase2/autoresearch/results/20260501-124036.json"
+  },
+  "mean_ari": 0.5724319294183182,
+  "per_fov": {
+    "FOV_151": {
+      "per_level": {
+        "class": 0.6903362352572138,
+        "subclass": 0.6770716725073641,
+        "supertype": 0.6468522455749975,
+        "cluster": 0.6111932368145241
+      },
+      "n_spots": 49710,
+      "n_cells_segmented": 56,
+      "frac_in_cell_pred": 0.2546771273385637,
+      "frac_in_cell_gt": 0.23663246831623416,
+      "seg_s": 42.300060749053955
+    },
+    "FOV_152": {
+      "per_level": {
+        "class": 0.5089159457420052,
+        "subclass": 0.5106587359213326,
+        "supertype": 0.5189949142074094,
+        "cluster": 0.51485915282111
+      },
+      "n_spots": 35014,
+      "n_cells_segmented": 71,
+      "frac_in_cell_pred": 0.26369452219112355,
+      "frac_in_cell_gt": 0.29059804649568743,
+      "seg_s": 42.03288435935974
+    },
+    "FOV_153": {
+      "per_level": {
+        "class": 0.5675965723764027,
+        "subclass": 0.5545198392936695,
+        "supertype": 0.585038409804462,
+        "cluster": 0.5755236495145278
+      },
+      "n_spots": 41273,
+      "n_cells_segmented": 76,
+      "frac_in_cell_pred": 0.2691105565381727,
+      "frac_in_cell_gt": 0.2558815690645216,
+      "seg_s": 43.11919808387756
+    },
+    "FOV_154": {
+      "per_level": {
+        "class": 0.5551952107961238,
+        "subclass": 0.5552207464103037,
+        "supertype": 0.5532726778754845,
+        "cluster": 0.5281773873132988
+      },
+      "n_spots": 54140,
+      "n_cells_segmented": 84,
+      "frac_in_cell_pred": 0.2800147765053565,
+      "frac_in_cell_gt": 0.2402290358330255,
+      "seg_s": 42.68588423728943
+    },
+    "FOV_155": {
+      "per_level": {
+        "class": 0.6076879725913684,
+        "subclass": 0.6229583022801076,
+        "supertype": 0.6145485643006713,
+        "cluster": 0.587705577353129
+      },
+      "n_spots": 61771,
+      "n_cells_segmented": 92,
+      "frac_in_cell_pred": 0.32722474947791036,
+      "frac_in_cell_gt": 0.27833449353256384,
+      "seg_s": 42.95789575576782
+    },
+    "FOV_156": {
+      "per_level": {
+        "class": 0.6339976526827527,
+        "subclass": 0.6275570318616356,
+        "supertype": 0.6492963074114838,
+        "cluster": 0.6758276459674708
+      },
+      "n_spots": 45901,
+      "n_cells_segmented": 79,
+      "frac_in_cell_pred": 0.2812792749613298,
+      "frac_in_cell_gt": 0.22870961416962593,
+      "seg_s": 43.01409888267517
+    },
+    "FOV_157": {
+      "per_level": {
+        "class": 0.6379836792838582,
+        "subclass": 0.6282722288049148,
+        "supertype": 0.6096015868541963,
+        "cluster": 0.6132769585998863
+      },
+      "n_spots": 36214,
+      "n_cells_segmented": 71,
+      "frac_in_cell_pred": 0.26205334953332965,
+      "frac_in_cell_gt": 0.23383221958358646,
+      "seg_s": 42.664705991744995
+    },
+    "FOV_158": {
+      "per_level": {
+        "class": 0.6174272177303839,
+        "subclass": 0.6178811913538002,
+        "supertype": 0.6162167783743242,
+        "cluster": 0.6095374767339226
+      },
+      "n_spots": 36373,
+      "n_cells_segmented": 83,
+      "frac_in_cell_pred": 0.2733896021774393,
+      "frac_in_cell_gt": 0.23940835234927008,
+      "seg_s": 40.841413736343384
+    },
+    "FOV_159": {
+      "per_level": {
+        "class": 0.5394588303296889,
+        "subclass": 0.5056813964222311,
+        "supertype": 0.43282534799809963,
+        "cluster": 0.44360806098951133
+      },
+      "n_spots": 47660,
+      "n_cells_segmented": 70,
+      "frac_in_cell_pred": 0.2957196810742761,
+      "frac_in_cell_gt": 0.2783676038606798,
+      "seg_s": 40.22843599319458
+    },
+    "FOV_160": {
+      "per_level": {
+        "class": 0.49044201296992984,
+        "subclass": 0.44768008272855586,
+        "supertype": 0.44768008272855586,
+        "cluster": 0.46669855815201927
+      },
+      "n_spots": 55342,
+      "n_cells_segmented": 86,
+      "frac_in_cell_pred": 0.30761447002276754,
+      "frac_in_cell_gt": 0.2597484731307145,
+      "seg_s": 40.75822305679321
+    }
+  }
+}

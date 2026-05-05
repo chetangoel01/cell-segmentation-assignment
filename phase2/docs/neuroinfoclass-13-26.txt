@@ -1,0 +1,377 @@
+CS-GY 9223 / 
+CS-UY 3943 Neuroinformatics
+Prof. Erdem Varol
+Lecture 13: Network Neuroscience
+1
+
+Today’s menu
+Announcements
+Network MappingNetwork Modeling
+Break
+Colab
+Paper presentations
+
+2
+
+Project 3 and Last Class Logistics
+Project 3 Phase 1 was due April 24 11:55 PM
+Phase 2 is due May 04, 2026 at 11:55 PM EST
+Write up is due May 12 at 11:55PM EST- please ensure you show visualizations and use this Latex template to shape your work. Include methodology for both phase 1 and phase 2
+https://www.overleaf.com/read/cyqkgvmpdfdd#c7da62
+Top 3 winners will be announced in the final class on May 5
+We will also have journal club prizes!
+3
+
+Phase 2 Review
+4
+
+5
+There are multiple hierarchies of cell types (coarse to fine)
+
+Ideas - use gene expression composition inside cells + neighborhood information to determine cell types
+6
+https://www.nature.com/articles/s41467-022-35288-0 
+
+Scoring 
+7
+Data: Raw MERFISH imaging data from a sagittal section of mouse brain tissue - you have raw DAPI/polyT images and a list of decoded mRNA spots (position and identity)
+Your goal for this phase: Assign each mRNA molecule classes in 5 hierarchies (e.g. 5 label predictions per spot).
+ARI eval Matrix: The Rand Index computes a similarity measure between two clusterings by considering all pairs of samples and counting pairs that are assigned in the same or different clusters in the predicted and true clusterings.
+
+
+Standard sigmoid curve competition scoring will be done
+
+
+4-Level ARI Hierarchy
+8
+
+Project 3 Grading (20% of grade total)
+10% for passing baseline of phase 1
+30% competition grading for phase 1
+10% for passing baseline of phase 2
+30% competition grading for phase 2
+20% for report (after phase 2)
+All curved to allow for B+ median as seen in Project 1
+
+9
+We will keep the same curve, resulting in ~76% for median score (assuming full marks on baseline and report), which will then be curved up to a B+
+
+Cloud Bursting 101
+10
+Remember you are limited to 300 GPU hours for the semester! Key practices:
+Make sure you’re calling the CPU partition (n2c48m24) for scheduling, any minute debugging issues, etc.
+Make sure you’re using MPS to run multiple jobs in parallel (this all counts towards the same GPU hour) -  LLMs (generally) don’t know how to do this for NYU Torch/HPC so make sure you use the example here
+To account for pre-empting, make sure you’re checkpointing and call for pre-empting in your SLURM job 
+Key colabs with additional resources:
+Colab 3 (detailed): https://colab.research.google.com/drive/1GRUdWB2Eh29AKRZsqk-wab1qGAtf78pl#scrollTo=taNjThK3lbiY
+Colab 11 (MPS): https://colab.research.google.com/drive/1O75SCcZnSnFA7zb6xiyxBg_BGHg2HfiE#scrollTo=4KZVJsrDqyO0 
+
+Presentations scheduled for today
+11
+https://docs.google.com/spreadsheets/d/1BCIVOoo6inOxDZbB6jAlqIs8T8HhlyWWGdXqH_RnDyY/edit?gid=0#gid=0 
+If you are missing from this list, please let us know!
+
+Undergrad Journal Club
+12
+Please write up a 1-page summary of results, as well as 3 questions you’d like to answer in the future if time permitted
+It should be submitted under “Class Participation” in Brightspace
+
+Take advantage of office hours for Project 3!
+13
+Prof. Varol scheduler: https://calendar.app.google/3sw3oKtqYWhe944x8 
+
+TA office hours zoom link: https://nyu.zoom.us/j/99424531208 
+
+
+Today’s menu
+Announcements
+Network MappingNetwork Modeling
+Break
+Colab
+Paper presentations
+
+14
+
+What is connectivity mapping?
+Two main types
+Static
+Segmenting cells 
+Locating synapses
+Assigning identities to who is synapsing with who?
+Uses electron microscopy
+Caveats: Not all synapses are active
+Other types of static:
+Viral tracing
+Dynamic
+Using live imaging to map which neurons truly trigger each other
+15
+
+Recall: Neural substructures
+Roughly (0.01mm)^3 in volume
+Can fit 1/10th of a neuron in this space:
+Synapses, dendritic spines can be seen.
+Structural connectivity of individual neurons and plasticity can be studied here.
+Measured using electron microscopy.
+(Zaccard, 2020)
+1um
+(Nakamoto, 2014)
+16
+
+Electron microscopy connectivity tracing
+17
+https://www.microns-explorer.org/phase1 
+https://www.nature.com/immersive/d42859-025-00001-w/index.html 
+
+18
+Viral tracing
+Inject a virus that makes *specific* neurons express fluorophore along its dendrites - take a picture. Repeat for other neurons.
+https://www.nature.com/articles/nature13186 
+
+Dynamic connectivity mapping
+19
+VERY SLOW - low throughput but very sensitive
+Faster but can make errors 
+
+Dynamic connectivity mapping
+Key idea: Use light sensitive proteins to make neurons spike…
+20
+
+How do we use this map connections?
+Setup:
+Choose a neuron to listen to with a voltage probe
+
+Trigger neurons around it with focused light, then listen to how the target neuron responds.
+This can be very slow if we do it neuron by neuron…
+Solution - trigger ensembles.
+21
+https://www.nature.com/articles/s41593-025-02053-7 
+
+More neurons you stimulate, signal starts mixing together…
+
+23
+Solution - train a NN to “demix” signal
+
+Does it work?
+24
+
+How do we use this map connections?
+Stimulate random sets of neurons, measure outputs, treat connections as an unknown variable to solve a (sparse) regression problem with.
+25
+
+Recovery is better with demixing
+26
+
+We can recover >80% of connections this way
+27
+
+Real data experiments in monkey visual cortex
+28
+
+Today’s menu
+Announcements
+Network MappingNetwork Modeling - what do we do with all these connections?
+Break
+Colab
+Paper presentations
+
+29
+
+Complex systems
+Complex systems contain many components that may interact with each other.
+Neither completely random or completely regular.
+Network science is the study of quantifying, interpreting and predicting interaction patterns in complex systems. 
+30
+Map of the internet circa 2005
+
+Complex systems are observable at almost all scales
+31
+
+Brains are complex systems
+Complex in varying scales:
+Micro: Neurons (components)→ synapses (interactions)
+1011 neurons
+1014 synapses
+Macro: Regions (components)→ projections (interactions)
+
+Regular yet unpredictable 
+
+32
+
+Network neuroscience pipeline
+33
+
+Network measurements
+Structural/Functional/Social
+Time-varying/Time-invariant
+Micro/meso/macro
+Directed/undirected
+
+34
+
+How to define brain networks
+Key ingredients:
+Nodes
+Edges
+Weights
+35
+
+Matrix representation - adjacency matrix
+36
+
+Encoding time varying networks
+37
+
+C. elegans
+38
+
+Fruitfly (Drosophila)
+39
+
+Rat
+40
+
+Different types of adjacency matrices
+41
+Macaque
+
+Quantifying network motifs
+42
+
+Quantifying network measures 
+43
+
+C. elegans network quantification
+44
+
+Segregation vs. integration
+45
+
+46
+Modularity equation:
+
+m = total number of edges
+Aij = adjacency between node i and j
+Pij = expected number of connections between node i and j
+Ci = one hot encoding of cluster membership of node i
+d(Ci,Cj) = 1 if Ci = Cj
+Community detection / modularity maximization
+
+Modularity versus a random network (null model)
+47
+
+There are multiple null models
+48
+
+Community detection reveals hidden modules
+49
+
+Interpreting network structure
+50
+
+Efficiency hypothesis
+51
+
+Brain scaling
+Larger animals have larger brains
+Larger brains have more synapses per neuron
+Larger brains have relatively more white matter
+Larger brains consume more energy
+Human brain is organized into hubs
+52
+
+Efficiency tradeoffs
+ The large-scale anatomical network of the macaque monkey can be computationally re-wired to minimize wiring cost (top panel; left side) but only at the expense of increasing path-length (bottom panel; left side). 
+Similarly, the connectome of C. elegans can be rewired to minimize connection distance (top panel; right side), but path-length in both local and global networks is increased as a result (bottom panel; right side)
+The global efficiency of functional networks derived from human functional MRI data increases monotonically with increasing connection density (top panel).
+53
+
+Predicting network structure
+54
+
+Can we predict connectivity from genetics?
+55
+
+Can we predict connectivity from genetics?
+56
+
+57
+
+58
+
+59
+
+60
+
+61
+
+62
+
+63
+
+64
+
+65
+
+General network prediction tasks
+66
+
+67
+Learning based network prediction methods
+
+Graph convolutional nets
+68
+Standard convolution:
+Graph convolution:
+
+Example study
+69
+
+Overview
+70
+Network neuroscience = quantifying, interpreting and predicting interaction patterns in graph representations of the brain.
+Model based approaches vs. learning based approaches.
+Graph convolutions enable CNN like architectures.
+Transformers have also been generalized to graphs.
+
+Outlook
+Now that we built a bridge from genomics, circuits, and networks, what is all this for?
+
+Biological priors for artificial neural networks
+71
+https://www.pnas.org/doi/10.1073/pnas.2409160121 
+https://www.nature.com/articles/s41467-023-37980-1 
+
+Today’s menu
+Announcements
+Network MappingNetwork Modeling
+Break
+Colab
+Paper presentations
+
+72
+
+Today’s menu
+Announcements
+Network MappingNetwork Modeling
+Break
+Colab
+Paper presentations
+
+73
+
+Colab
+https://colab.research.google.com/drive/1bQN7aCKWbEP5TEsimP-MkKujuS028a_J?usp=sharing
+74
+
+Today’s menu
+Announcements
+Genomics
+Break
+Colab
+Paper presentations
+
+75
+
+Presentations
+76
+https://docs.google.com/spreadsheets/d/1BCIVOoo6inOxDZbB6jAlqIs8T8HhlyWWGdXqH_RnDyY/edit?gid=0#gid=0 

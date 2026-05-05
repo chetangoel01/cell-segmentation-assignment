@@ -1,0 +1,57 @@
+{
+  "config": {
+    "models_dir": "phase2/runs/baseline-codelab-p2only",
+    "val_fovs": "FOV_151,FOV_154,FOV_159",
+    "seg_checkpoint": "phase2/external_models/cellpose_nuclei_cosine_ep125",
+    "include_spot_density": true,
+    "spot_density_sigma": 8.0,
+    "cellpose_diameter": 0.0,
+    "cellprob_threshold": -0.5,
+    "flow_threshold": 0.6,
+    "nn_radius": 0.0,
+    "device": "auto",
+    "out": "/Users/chetangoel/Desktop/Repositories/cell-segmentation-assignment/phase2/autoresearch/results/20260501-113933.json"
+  },
+  "mean_ari": 0.5445060602419662,
+  "per_fov": {
+    "FOV_151": {
+      "per_level": {
+        "class": 0.6415432554455558,
+        "subclass": 0.6414969952539298,
+        "supertype": 0.6420860699076115,
+        "cluster": 0.6433548379773801
+      },
+      "n_spots": 49710,
+      "n_cells_segmented": 58,
+      "frac_in_cell_pred": 0.2580164956749145,
+      "frac_in_cell_gt": 0.23663246831623416,
+      "seg_s": 42.4477162361145
+    },
+    "FOV_154": {
+      "per_level": {
+        "class": 0.4042159928136723,
+        "subclass": 0.4210745835092442,
+        "supertype": 0.432100165889149,
+        "cluster": 0.4548685041134416
+      },
+      "n_spots": 54140,
+      "n_cells_segmented": 86,
+      "frac_in_cell_pred": 0.2815847801994828,
+      "frac_in_cell_gt": 0.2402290358330255,
+      "seg_s": 40.72622013092041
+    },
+    "FOV_159": {
+      "per_level": {
+        "class": 0.5427992206767542,
+        "subclass": 0.5444682751503328,
+        "supertype": 0.558651076401974,
+        "cluster": 0.6074137457645502
+      },
+      "n_spots": 47660,
+      "n_cells_segmented": 73,
+      "frac_in_cell_pred": 0.2975031472933277,
+      "frac_in_cell_gt": 0.2783676038606798,
+      "seg_s": 40.57616710662842
+    }
+  }
+}
