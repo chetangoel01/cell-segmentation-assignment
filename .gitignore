@@ -3,6 +3,7 @@ phase2/data/
 
 # python
 .venv/
+.venv-figs/
 __pycache__/
 *.pyc
 
